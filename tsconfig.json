@@ -8,6 +8,15 @@
     },
     {
       "path": "./apps/project-compass"
+    },
+    {
+      "path": "./apps/api-e2e"
+    },
+    {
+      "path": "./apps/api"
+    },
+    {
+      "path": "./libs/shared/types"
     }
   ]
 }

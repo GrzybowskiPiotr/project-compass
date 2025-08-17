@@ -1,6 +1,6 @@
 /// <reference types='vitest' />
-import { defineConfig } from 'vite';
 import { reactRouter } from '@react-router/dev/vite';
+import { defineConfig } from 'vite';
 
 export default defineConfig(() => ({
   root: __dirname,
@@ -8,6 +8,13 @@ export default defineConfig(() => ({
   server: {
     port: 4200,
     host: 'localhost',
+    proxy: {
+      '/api': {
+        target: 'http://localhost:3333',
+        changeOrigin: true,
+        secure: false,
+      },
+    },
   },
   preview: {
     port: 4300,
@@ -30,8 +37,11 @@ export default defineConfig(() => ({
     watch: false,
     globals: true,
     environment: 'jsdom',
-    include: ['{src,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}'],
+    include: [
+      '{src,app,tests}/**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}',
+    ],
     reporters: ['default'],
+    setupFiles: ['./test-setup.ts'],
     coverage: {
       reportsDirectory: './test-output/vitest/coverage',
       provider: 'v8' as const,

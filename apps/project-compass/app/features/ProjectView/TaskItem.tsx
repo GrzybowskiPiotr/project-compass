@@ -1,0 +1,124 @@
+import { Task } from '@project-compass/shared-types';
+import { useState } from 'react';
+import { TaskList } from './TaskList';
+
+interface TaskItemsPropos {
+  task: Task;
+  expandedTaskIds: string[];
+  onToggleExpand: (taskId: string) => void;
+  onToggleComplete: (taskId: string) => void;
+  onTaskDelete: (taskId: string) => void;
+  handleEditTask: (taskId: string, newTitle: string) => void;
+  handleSubTaskAdd: (parentId: string, title: string) => void;
+}
+
+export function TaskItem({
+  task,
+  expandedTaskIds,
+  onToggleExpand,
+  onToggleComplete,
+  onTaskDelete,
+  handleEditTask,
+  handleSubTaskAdd,
+}: TaskItemsPropos) {
+  const [isEditable, setIsEditable] = useState(false);
+  const [newTitle, setNewTitle] = useState(task.title);
+  const isExpanded = expandedTaskIds.includes(task.id);
+  const hasSubTasks = task.subTasks && task.subTasks.length > 0;
+
+  const handleSave = function () {
+    handleEditTask(task.id, newTitle);
+    setIsEditable(false);
+  };
+
+  const handleCancel = function () {
+    setIsEditable(false);
+    setNewTitle(task.title);
+  };
+
+  return (
+    <li className="my-1">
+      <div className="flex items-center max-w-fit bg-slate-600 p-2 rounded-md">
+        <div className="w-6">
+          {hasSubTasks && (
+            <button
+              onClick={() => onToggleExpand(task.id)}
+              className="mr-2 text-xs rounded p-1 hover:bg-slate-500 transition-colors"
+            >
+              {isExpanded ? '▼' : '►'}
+            </button>
+          )}
+        </div>
+        <input
+          type="checkbox"
+          checked={task.isCompleted}
+          onChange={() => onToggleComplete(task.id)}
+          className="mr-2"
+        />
+        {isEditable ? (
+          <input
+            type="text"
+            placeholder={task.title}
+            onChange={(e) => setNewTitle(e.target.value)}
+            onBlur={handleSave}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                handleSave();
+              }
+              if (e.key === 'Escape') {
+                handleCancel();
+              }
+            }}
+            className="text-gray-700 p-1 rounded w-64"
+            autoFocus
+            value={newTitle}
+          />
+        ) : (
+          <span onClick={() => setIsEditable(true)}>{task.title}</span>
+        )}
+
+        {isEditable ? (
+          <button
+            onClick={handleSave}
+            className="ml-4 p-1 text-xs text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
+          >
+            Zapisz
+          </button>
+        ) : (
+          <button
+            onClick={() => setIsEditable(true)}
+            className="ml-4 p-1 text-xs text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
+          >
+            Edytuj
+          </button>
+        )}
+        <button
+          onClick={() => onTaskDelete(task.id)}
+          className="ml-4 p-1 text-xs text-red-600 hover:text-slate-400 bg-slate-400 rounded transition-colors hover:bg-red-700"
+        >
+          Usuń
+        </button>
+        <button
+          aria-label="dodaj podzadanie"
+          className="ml-4 pl-1 pr-1 text-s text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
+          onClick={() => handleSubTaskAdd(task.id, 'Testiwe sub zadanie')}
+        >
+          +
+        </button>
+        {isExpanded && hasSubTasks && (
+          <div className="ml-8 pt-1">
+            <TaskList
+              tasks={task.subTasks}
+              expandedTaskIds={expandedTaskIds}
+              onToggleExpand={onToggleExpand}
+              onToggleComplete={onToggleComplete}
+              onTaskDelete={onTaskDelete}
+              handleEditTask={handleEditTask}
+              handleSubTaskAdd={handleSubTaskAdd}
+            />
+          </div>
+        )}
+      </div>
+    </li>
+  );
+}

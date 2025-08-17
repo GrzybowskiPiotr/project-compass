@@ -1,7 +1,7 @@
 import { Task } from '@project-compass/shared-types';
 import { useState } from 'react';
+import { AddSubTaskForm } from './AddSubTaskForm';
 import { TaskList } from './TaskList';
-
 interface TaskItemsPropos {
   task: Task;
   expandedTaskIds: string[];
@@ -23,6 +23,7 @@ export function TaskItem({
 }: TaskItemsPropos) {
   const [isEditable, setIsEditable] = useState(false);
   const [newTitle, setNewTitle] = useState(task.title);
+  const [isAddingSubTask, setIsAddingSubTask] = useState(false);
   const isExpanded = expandedTaskIds.includes(task.id);
   const hasSubTasks = task.subTasks && task.subTasks.length > 0;
 
@@ -37,18 +38,8 @@ export function TaskItem({
   };
 
   return (
-    <li className="my-1">
-      <div className="flex items-center max-w-fit bg-slate-600 p-2 rounded-md">
-        <div className="w-6">
-          {hasSubTasks && (
-            <button
-              onClick={() => onToggleExpand(task.id)}
-              className="mr-2 text-xs rounded p-1 hover:bg-slate-500 transition-colors"
-            >
-              {isExpanded ? '▼' : '►'}
-            </button>
-          )}
-        </div>
+    <li className="my-1 p-1">
+      <div className="flex items-center max-w-fit bg-slate-600 h-16  pl-2  pr-2 rounded-md ">
         <input
           type="checkbox"
           checked={task.isCompleted}
@@ -101,12 +92,29 @@ export function TaskItem({
         <button
           aria-label="dodaj podzadanie"
           className="ml-4 pl-1 pr-1 text-s text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
-          onClick={() => handleSubTaskAdd(task.id, 'Testiwe sub zadanie')}
+          onClick={() => setIsAddingSubTask(true)}
         >
           +
         </button>
+        <div className="w-6">
+          {hasSubTasks && (
+            <button
+              onClick={() => onToggleExpand(task.id)}
+              className="mr-2 ml-2 text-xs rounded p-1 hover:bg-slate-500 transition-colors"
+            >
+              {isExpanded ? '▼' : '►'}
+            </button>
+          )}
+        </div>
+        {isAddingSubTask && (
+          <AddSubTaskForm
+            parentId={task.id}
+            onSubTaskSubmit={handleSubTaskAdd}
+            onCancel={() => setIsAddingSubTask(false)}
+          />
+        )}
         {isExpanded && hasSubTasks && (
-          <div className="ml-8 pt-1">
+          <div className="ml-8 pt-1 bg-slate-400 rounded">
             <TaskList
               tasks={task.subTasks}
               expandedTaskIds={expandedTaskIds}

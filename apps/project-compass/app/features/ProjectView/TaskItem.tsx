@@ -3,21 +3,27 @@ import { useState } from 'react';
 import { AddSubTaskForm } from './AddSubTaskForm';
 import { TaskList } from './TaskList';
 interface TaskItemsPropos {
+  projectId: string;
   task: Task;
   expandedTaskIds: string[];
-  onToggleExpand: (taskId: string) => void;
-  onToggleComplete: (taskId: string) => void;
-  onTaskDelete: (taskId: string) => void;
+  handleToggleExpand: (taskId: string) => void;
+  handleToggleComplete: (taskId: string) => void;
+  handleDeleteTask: (taskId: string) => void;
   handleEditTask: (taskId: string, newTitle: string) => void;
-  handleSubTaskAdd: (parentId: string, title: string) => void;
+  handleSubTaskAdd: (
+    parentId: string,
+    title: string,
+    projectId: string,
+  ) => void;
 }
 
 export function TaskItem({
+  projectId,
   task,
   expandedTaskIds,
-  onToggleExpand,
-  onToggleComplete,
-  onTaskDelete,
+  handleToggleExpand,
+  handleToggleComplete,
+  handleDeleteTask,
   handleEditTask,
   handleSubTaskAdd,
 }: TaskItemsPropos) {
@@ -43,7 +49,7 @@ export function TaskItem({
         <input
           type="checkbox"
           checked={task.isCompleted}
-          onChange={() => onToggleComplete(task.id)}
+          onChange={() => handleToggleComplete(task.id)}
           className="mr-2"
         />
         {isEditable ? (
@@ -84,7 +90,7 @@ export function TaskItem({
           </button>
         )}
         <button
-          onClick={() => onTaskDelete(task.id)}
+          onClick={() => handleDeleteTask(task.id)}
           className="ml-4 p-1 text-xs text-red-600 hover:text-slate-400 bg-slate-400 rounded transition-colors hover:bg-red-700"
         >
           Usuń
@@ -99,7 +105,7 @@ export function TaskItem({
         <div className="w-6">
           {hasSubTasks && (
             <button
-              onClick={() => onToggleExpand(task.id)}
+              onClick={() => handleToggleExpand(task.id)}
               className="mr-2 ml-2 text-xs rounded p-1 hover:bg-slate-500 transition-colors"
             >
               {isExpanded ? '▼' : '►'}
@@ -108,6 +114,7 @@ export function TaskItem({
         </div>
         {isAddingSubTask && (
           <AddSubTaskForm
+            projectId={projectId}
             parentId={task.id}
             onSubTaskSubmit={handleSubTaskAdd}
             onCancel={() => setIsAddingSubTask(false)}
@@ -116,11 +123,12 @@ export function TaskItem({
         {isExpanded && hasSubTasks && (
           <div className="ml-8 pt-1 bg-slate-400 rounded">
             <TaskList
+              projectId={projectId}
               tasks={task.subTasks}
               expandedTaskIds={expandedTaskIds}
-              onToggleExpand={onToggleExpand}
-              onToggleComplete={onToggleComplete}
-              onTaskDelete={onTaskDelete}
+              handleToggleExpand={handleToggleExpand}
+              handleToggleComplete={handleToggleComplete}
+              handleDeleteTask={handleDeleteTask}
               handleEditTask={handleEditTask}
               handleSubTaskAdd={handleSubTaskAdd}
             />

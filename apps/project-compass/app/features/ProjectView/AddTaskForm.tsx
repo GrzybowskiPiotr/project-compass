@@ -2,15 +2,16 @@ import { useState } from 'react';
 import { Form } from 'react-router';
 
 interface formProps {
-  onTaskAdd: (title: string) => void;
+  onTaskAdd: (title: string, projectId: string) => void;
+  projectId: string;
 }
 
-export function AddTaskForm({ onTaskAdd }: formProps) {
+export function AddTaskForm({ onTaskAdd, projectId }: formProps) {
   const [taskTitle, setTaskTitle] = useState('');
 
   const handleSubmit = function (e: React.FormEvent) {
     e.preventDefault();
-    onTaskAdd(taskTitle);
+    onTaskAdd(taskTitle, projectId);
     setTaskTitle('');
     return;
   };

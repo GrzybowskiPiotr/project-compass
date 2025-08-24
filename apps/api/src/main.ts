@@ -1,9 +1,20 @@
 import { Project, Task } from '@project-compass/shared-types';
 import express from 'express';
 import * as path from 'path';
-import { getDb, getProjectWithTasks, initializeDatabase } from './database';
-
+import {
+  createTask,
+  deleteTaskAndChildren,
+  getDb,
+  getProjectWithTasks,
+  initializeDatabase,
+  updateTask,
+} from './database';
+const port = process.env.PORT || 3333;
 const app = express();
+app.use(express.json());
+const server = app.listen(port, () => {
+  console.log(`Listening at http://localhost:${port}/api/project/1`);
+});
 
 const MockProject: Project = {
   id: '1',
@@ -121,9 +132,53 @@ app.get('/api/project/:id', async (req, res) => {
   }
 });
 
-const port = process.env.PORT || 3333;
-const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api/project/1`);
+app.post('/api/tasks', async (req, res) => {
+  try {
+    const { title, projectId, parentId } = req.body;
+
+    if (!title || !projectId) {
+      res.status(400).send({ message: 'Title and projectId are required' });
+      return;
+    }
+
+    const createdTask = await createTask(title, projectId, parentId || null);
+    res.status(201).send(createdTask);
+  } catch (error) {
+    console.error('Error. Ctreate task faild', error);
+    res.status(500).send({ message: 'Interna; server Error' });
+  }
+});
+
+app.delete('/api/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).send({ message: 'Task id is required' });
+    }
+    await deleteTaskAndChildren(id);
+    res.status(204).send();
+  } catch (error) {
+    console.error('Error deleting task:', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+app.patch('/api/tasks/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    if (Object.keys(updates).length === 0) {
+      res.status(400).send({ message: 'No updates provided' });
+      return;
+    }
+
+    const updatedTask = await updateTask(id, updates);
+    res.status(200).send(updatedTask);
+  } catch (error) {
+    console.error('Error updating task:', error);
+    res.status(500).send({ message: 'An internal server error occurred' });
+  }
 });
 
 server.on('error', console.error);

@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Form } from 'react-router';
 interface AddSubTaskFormProps {
+  projectId: string;
   parentId: string;
-  onSubTaskSubmit: (parentId: string, title: string) => void;
+  onSubTaskSubmit: (parentId: string, title: string, projectId: string) => void;
   onCancel: () => void;
 }
 
@@ -10,6 +11,7 @@ export function AddSubTaskForm({
   parentId,
   onSubTaskSubmit,
   onCancel,
+  projectId,
 }: AddSubTaskFormProps) {
   const [title, setTitle] = useState('');
 
@@ -19,7 +21,7 @@ export function AddSubTaskForm({
       onCancel();
       return;
     }
-    onSubTaskSubmit(parentId, title);
+    onSubTaskSubmit(parentId, title, projectId);
     onCancel();
   };
   return (

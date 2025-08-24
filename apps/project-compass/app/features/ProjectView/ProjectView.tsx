@@ -34,15 +34,16 @@ export function ProjectView() {
     <div className="p-8 bg-gray-700 text-white min-h-screen">
       <h1 className="text-3xl font-bold mb-4">{project.name}</h1>
       <TaskList
+        projectId={project.id}
         tasks={project.tasks}
         expandedTaskIds={expandedTaskIds}
-        onToggleExpand={handleToggleExpand}
-        onToggleComplete={handleToggleComplete}
-        onTaskDelete={handleDeleteTask}
+        handleToggleExpand={handleToggleExpand}
+        handleToggleComplete={handleToggleComplete}
+        handleDeleteTask={handleDeleteTask}
         handleEditTask={handleEditTask}
         handleSubTaskAdd={handleSubTaskAdd}
       />
-      <AddTaskForm onTaskAdd={handleAddTask} />
+      <AddTaskForm onTaskAdd={handleAddTask} projectId={project.id} />
     </div>
   );
 }

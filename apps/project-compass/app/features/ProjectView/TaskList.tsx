@@ -1,21 +1,27 @@
 import { Task } from '@project-compass/shared-types';
 import { TaskItem } from './TaskItem';
 interface TaskListProps {
+  projectId: string;
   tasks: Task[];
   expandedTaskIds: string[];
-  onToggleExpand: (taskId: string) => void;
-  onToggleComplete: (taskId: string) => void;
-  onTaskDelete: (taskId: string) => void;
+  handleToggleExpand: (taskId: string) => void;
+  handleToggleComplete: (taskId: string) => void;
+  handleDeleteTask: (taskId: string) => void;
   handleEditTask: (taskId: string, newTitle: string) => void;
-  handleSubTaskAdd: (parentId: string, title: string) => void;
+  handleSubTaskAdd: (
+    parentId: string,
+    title: string,
+    projectId: string,
+  ) => void;
 }
 
 export function TaskList({
+  projectId,
   tasks,
   expandedTaskIds,
-  onToggleExpand,
-  onToggleComplete,
-  onTaskDelete,
+  handleToggleExpand,
+  handleToggleComplete,
+  handleDeleteTask,
   handleEditTask,
   handleSubTaskAdd,
 }: TaskListProps) {
@@ -23,12 +29,13 @@ export function TaskList({
     <ul>
       {tasks.map((task) => (
         <TaskItem
+          projectId={projectId}
           key={task.id}
           task={task}
           expandedTaskIds={expandedTaskIds}
-          onToggleExpand={onToggleExpand}
-          onToggleComplete={onToggleComplete}
-          onTaskDelete={onTaskDelete}
+          handleToggleExpand={handleToggleExpand}
+          handleToggleComplete={handleToggleComplete}
+          handleDeleteTask={handleDeleteTask}
           handleEditTask={handleEditTask}
           handleSubTaskAdd={handleSubTaskAdd}
         />

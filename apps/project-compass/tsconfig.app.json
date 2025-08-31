@@ -51,6 +51,7 @@
   "references": [
     {
       "path": "../../libs/shared/types/tsconfig.lib.json"
-    }
+    },
+    { "path": "../../libs/shared/ui/tsconfig.lib.json" }
   ]
 }

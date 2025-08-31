@@ -1,6 +1,7 @@
-import { Project, Task } from '@project-compass/shared-types';
+import { Task, User } from '@project-compass/shared-types';
 import express from 'express';
 import * as path from 'path';
+import { MockProject } from './consts/mocks';
 import {
   createTask,
   deleteTaskAndChildren,
@@ -9,65 +10,13 @@ import {
   initializeDatabase,
   updateTask,
 } from './database';
+
 const port = process.env.PORT || 3333;
 const app = express();
 app.use(express.json());
 const server = app.listen(port, () => {
   console.log(`Listening at http://localhost:${port}/api/project/1`);
 });
-
-const MockProject: Project = {
-  id: '1',
-  name: 'Projet pobrany z Bazy Danych',
-  createdAt: new Date(),
-  userId: 'user-123',
-  tasks: [
-    {
-      id: '1',
-      title: 'Skonfigurować środowisko',
-      isCompleted: true,
-      createdAt: new Date(),
-      subTasks: [],
-    },
-    {
-      id: '2',
-      title: 'Zbudować komponenty UI',
-      isCompleted: false,
-      createdAt: new Date(),
-      subTasks: [
-        {
-          id: 't2-1',
-          title: 'Stworzyć TaskItem',
-          isCompleted: true,
-          createdAt: new Date(),
-          subTasks: [],
-        },
-        {
-          id: 't2-2',
-          title: 'stworzyć TaskList',
-          isCompleted: true,
-          createdAt: new Date(),
-          subTasks: [
-            {
-              id: 't2-2-1',
-              title: 'stworzyć TaskListItem',
-              isCompleted: false,
-              createdAt: new Date(),
-              subTasks: [],
-            },
-          ],
-        },
-      ],
-    },
-    {
-      id: '3',
-      title: 'Dodać logikę rekurencyjną',
-      isCompleted: false,
-      createdAt: new Date(),
-      subTasks: [],
-    },
-  ],
-};
 
 async function seedDatabase() {
   const db = await getDb();
@@ -178,6 +127,28 @@ app.patch('/api/tasks/:id', async (req, res) => {
   } catch (error) {
     console.error('Error updating task:', error);
     res.status(500).send({ message: 'An internal server error occurred' });
+  }
+});
+
+app.post('/api/auth/login', async (req, res) => {
+  const { email, password } = req.body;
+
+  if ((!email || !password) && (email === '' || password === '')) {
+    res.status(400).send({ message: 'Email and password are required' });
+    return;
+  }
+
+  if (email === 'test@test.com' && password === 'password') {
+    const user: User = {
+      id: '1',
+      email: 'test@test.com',
+      name: 'Jan Kowalski',
+    };
+    const token = 'mock-jwt-token';
+
+    res.status(200).send({ user, token });
+  } else {
+    res.status(401).send({ message: 'Invalid credentials' });
   }
 });
 

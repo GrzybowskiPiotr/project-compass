@@ -1,3 +1,4 @@
+import { Button } from '@project-compass/shared-ui';
 import { useState } from 'react';
 import { Form } from 'react-router';
 interface AddSubTaskFormProps {
@@ -26,7 +27,7 @@ export function AddSubTaskForm({
   };
   return (
     <Form onSubmit={handleSubmit} className="pt-2 ml-8">
-      <div>
+      <div className="flex">
         <label htmlFor="subtask-title" className="sr-only">
           Tytuł podzadania:
         </label>
@@ -43,19 +44,18 @@ export function AddSubTaskForm({
           }}
         />
 
-        <button
-          type="submit"
-          className="bg-green-600 px-3 py-2 hover:bg-green-700 font-semibold transition-colors"
-        >
+        <Button className="rounded-none" type="submit">
           ✓
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="danger"
+          size="medium"
           type="button"
-          className="bg-red-600 px-3 py-2 rounded-r-md hover:bg-red-700 font-semibold transition-colors"
           onClick={onCancel}
+          className="rounded-l-none border-none"
         >
-          ×
-        </button>
+          x
+        </Button>
       </div>
     </Form>
   );

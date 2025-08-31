@@ -13,3 +13,9 @@ export interface Project {
   createdAt: Date;
   tasks: Task[];
 }
+
+export interface User {
+  id: string;
+  email: string;
+  name: string;
+}

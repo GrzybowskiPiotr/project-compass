@@ -19,7 +19,8 @@
     "customConditions": ["development"],
     "baseUrl": ".",
     "paths": {
-      "@project-compass/shared-types": ["libs/shared/types/src/index.ts"]
+      "@project-compass/shared-types": ["libs/shared/types/src/index.ts"],
+      "@project-compass/shared-ui": ["libs/shared/ui/src/index.ts"]
     }
   }
 }

@@ -1,4 +1,5 @@
 import { Task } from '@project-compass/shared-types';
+import { Button } from '@project-compass/shared-ui';
 import { useState } from 'react';
 import { AddSubTaskForm } from './AddSubTaskForm';
 import { TaskList } from './TaskList';
@@ -45,7 +46,7 @@ export function TaskItem({
 
   return (
     <li className="my-1 p-1">
-      <div className="flex items-center max-w-fit bg-slate-600 h-16  pl-2  pr-2 rounded-md ">
+      <div className="flex items-center max-w-fit bg-slate-600 h-16  pl-4  pr-8 rounded-md ">
         <input
           type="checkbox"
           checked={task.isCompleted}
@@ -75,41 +76,52 @@ export function TaskItem({
         )}
 
         {isEditable ? (
-          <button
+          <Button
             onClick={handleSave}
-            className="ml-4 p-1 text-xs text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
+            variant="primary"
+            size="small"
+            className="ml-4"
           >
             Zapisz
-          </button>
+          </Button>
         ) : (
-          <button
+          <Button
             onClick={() => setIsEditable(true)}
-            className="ml-4 p-1 text-xs text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
+            variant="secondary"
+            size="small"
+            className="ml-4"
           >
             Edytuj
-          </button>
+          </Button>
         )}
-        <button
+
+        <Button
           onClick={() => handleDeleteTask(task.id)}
-          className="ml-4 p-1 text-xs text-red-600 hover:text-slate-400 bg-slate-400 rounded transition-colors hover:bg-red-700"
+          variant="danger"
+          size="small"
+          className="ml-4"
         >
           Usuń
-        </button>
-        <button
-          aria-label="dodaj podzadanie"
-          className="ml-4 pl-1 pr-1 text-s text-blue-600 hover:bg-blue-600 bg-slate-400 hover:text-slate-400 font-semibold rounded transition-colors"
+        </Button>
+
+        <Button
           onClick={() => setIsAddingSubTask(true)}
+          variant="primary"
+          size="small"
+          className="ml-4"
         >
-          +
-        </button>
+          Dodaj podzadanie
+        </Button>
         <div className="w-6">
           {hasSubTasks && (
-            <button
+            <Button
               onClick={() => handleToggleExpand(task.id)}
-              className="mr-2 ml-2 text-xs rounded p-1 hover:bg-slate-500 transition-colors"
+              variant="secondary"
+              size="small"
+              className="ml-4"
             >
               {isExpanded ? '▼' : '►'}
-            </button>
+            </Button>
           )}
         </div>
         {isAddingSubTask && (

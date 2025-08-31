@@ -1,3 +1,4 @@
+import { Button } from '@project-compass/shared-ui';
 import { useState } from 'react';
 import { Form } from 'react-router';
 
@@ -30,12 +31,14 @@ export function AddTaskForm({ onTaskAdd, projectId }: formProps) {
           value={taskTitle}
           onChange={(e) => setTaskTitle(e.target.value)}
         />
-        <button
+        <Button
           type="submit"
-          className="bg-blue-600 px-6 py-2 rounded-r-md hover:bg-blue-700 font-semibold transition-colors"
+          variant="primary"
+          size="medium"
+          className="rounded-l-none"
         >
           Dodaj
-        </button>
+        </Button>
       </div>
     </Form>
   );

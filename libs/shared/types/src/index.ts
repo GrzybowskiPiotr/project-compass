@@ -19,3 +19,10 @@ export interface User {
   email: string;
   name: string;
 }
+
+export interface UserDB {
+  id: string;
+  email: string;
+  name: string;
+  hashPassword: string;
+}

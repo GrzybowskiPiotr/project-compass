@@ -1,4 +1,4 @@
-import { Project, Task } from '@project-compass/shared-types';
+import { Project, Task, User, UserDB } from '@project-compass/shared-types';
 import * as fs from 'fs';
 import * as path from 'path';
 import { open } from 'sqlite';
@@ -49,7 +49,14 @@ export async function initializeDatabase() {
       FOREIGN KEY (parentId) REFERENCES tasks(id)
     );
   `);
-
+  await db.exec(`
+    CREATE TABLE IF NOT EXISTS users (
+    id TEXT PRIMARY KEY,
+    name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
+    password TEXT NOT NULL
+    );
+    `);
   console.log('Database initialized successfully!');
 }
 
@@ -162,4 +169,24 @@ export async function updateTask(
   await db.run(query, [...values, taskId]);
 
   return db.get(`SELECT * FROM tasks WHERE id = ?`, taskId);
+}
+export async function createUser(
+  newUserData: Omit<UserDB, 'id'>,
+): Promise<User> {
+  const db = await getDb();
+
+  const newUser: User = {
+    id: `user-${Date.now()}`,
+    name: newUserData.name,
+    email: newUserData.email,
+  };
+
+  await db.run(
+    `INSERT INTO users (id, name, email, password ) VALUES (?,?,?,?)`,
+    newUser.id,
+    newUser.name,
+    newUser.email,
+    newUserData.hashPassword,
+  );
+  return newUser;
 }

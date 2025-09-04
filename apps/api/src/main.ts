@@ -1,9 +1,11 @@
 import { Task, User } from '@project-compass/shared-types';
+import bcrypt from 'bcrypt';
 import express from 'express';
 import * as path from 'path';
 import { MockProject } from './consts/mocks';
 import {
   createTask,
+  createUser,
   deleteTaskAndChildren,
   getDb,
   getProjectWithTasks,
@@ -67,13 +69,18 @@ app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
 app.get('/api/project/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const project = await getProjectWithTasks(id);
+    const authHeader = req.headers.authorization;
 
-    if (project) {
-      res.send(project);
+    if (authHeader === 'Bearer mock-jwt-token') {
+      const { id } = req.params;
+      const project = await getProjectWithTasks(id);
+      if (project) {
+        res.send(project);
+      } else {
+        res.status(404).send({ message: 'Project not found' });
+      }
     } else {
-      res.status(404).send({ message: 'Project not found' });
+      res.status(404).send({ message: 'Forbidden: Access denied' });
     }
   } catch (error) {
     console.error('Error fetching project:', error);
@@ -149,6 +156,28 @@ app.post('/api/auth/login', async (req, res) => {
     res.status(200).send({ user, token });
   } else {
     res.status(401).send({ message: 'Invalid credentials' });
+  }
+});
+
+app.post('/api/auth/register', async (req, res) => {
+  const { name, email, password } = req.body;
+  //Prosta walidacja trzymanyc danych.Walidujemy zawsze dane wejsciowe przeda zamisem do DB lub przed przetwarznienm.
+  if (!name || !email || !password) {
+    return res.status(400).send({ message: 'All fields are required' });
+  }
+  //haszowanie hasła
+  try {
+    const hashPassword = await bcrypt.hash(password, 10);
+    const createdUser = await createUser({ name, email, hashPassword });
+    res.status(201).send(createdUser);
+    return;
+  } catch (error) {
+    res.status(409).send({
+      message:
+        'User with given email address exists. Provide unique email for new user',
+    });
+    console.log(error);
+    return;
   }
 });
 

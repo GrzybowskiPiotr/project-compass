@@ -1,9 +1,9 @@
 import { Project, Task, User, UserDB } from '@project-compass/shared-types';
+import 'dotenv/config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
-
 type Database = Awaited<ReturnType<typeof open>>;
 
 let db: Database | null = null;
@@ -13,8 +13,14 @@ export async function getDb() {
     return db;
   }
 
-  const dbDirectory = path.join(process.cwd(), 'apps/api/database');
-  const dbPath = path.join(dbDirectory, 'database.db');
+  if (process.env.DATABASE_PATH === undefined) {
+    console.error('Path to database is not provided');
+    return null;
+  }
+
+  const dbPath = process.env.DATABASE_PATH;
+  const dbDirectory = path.dirname(dbPath);
+
   if (!fs.existsSync(dbDirectory)) {
     fs.mkdirSync(dbDirectory, { recursive: true });
     console.log('Database directory not found. Created:', dbDirectory);
@@ -24,11 +30,60 @@ export async function getDb() {
     filename: dbPath,
     driver: sqlite3.Database,
   });
+
   return db;
 }
 
+export async function ensureDbConnection(): Promise<Database> {
+  const database = await getDb();
+  if (!database) {
+    throw new Error(
+      'Database connection not established. Check DATABASE_PATH in .env',
+    );
+  }
+  return database;
+}
+export async function createProject(
+  name: string,
+  userId: string,
+): Promise<Project> {
+  const db = await ensureDbConnection();
+
+  const newProject: Project = {
+    id: `project-${Date.now()}`,
+    createdAt: new Date(),
+    userId,
+    tasks: [],
+    name,
+  };
+
+  await db.run(
+    `INSER INTO projects (id, name, createdAt, userId) VALUES (?,?,?,?)`,
+    newProject.id,
+    newProject.name,
+    newProject.createdAt.toISOString(),
+    newProject,
+    userId,
+  );
+  return newProject;
+}
+
+export async function findUserByEmail(email: string) {
+  if (email.trim().length === 0) return;
+
+  const db = await ensureDbConnection();
+  const foundUserFromDB = await db.get(
+    `
+    SELECT * FROM users WHERE email = ?
+    `,
+    email,
+  );
+
+  return foundUserFromDB;
+}
+
 export async function initializeDatabase() {
-  const db = await getDb();
+  const db = await ensureDbConnection();
   await db.exec(`
     CREATE TABLE IF NOT EXISTS projects (
       id TEXT PRIMARY KEY,
@@ -61,12 +116,14 @@ export async function initializeDatabase() {
 }
 
 export async function getProjectWithTasks(
+  userId: string,
   projectId: string,
 ): Promise<Project | null> {
-  const db = await getDb();
+  const db = await ensureDbConnection();
   const projectData = await db.get(
-    'SELECT * FROM projects WHERE id = ?',
+    'SELECT * FROM projects WHERE id = ? AND userId = ?',
     projectId,
+    userId,
   );
 
   if (!projectData) {
@@ -105,7 +162,7 @@ export async function createTask(
   projectId: string,
   parentId: string | null,
 ): Promise<Task> {
-  const db = await getDb();
+  const db = await ensureDbConnection();
 
   const newTask: Task = {
     id: `task-${Date.now()}`,
@@ -127,8 +184,7 @@ export async function createTask(
   return newTask;
 }
 export async function deleteTaskAndChildren(taskId: string) {
-  const db = await getDb();
-
+  const db = await ensureDbConnection();
   const getAllChildrenTasksToDelete = await db.all(
     'SELECT * FROM tasks WHERE parentId = ?',
     taskId,
@@ -159,7 +215,9 @@ export async function updateTask(
     fieldsToUpdate.push('isCompleted = ?');
     values.push(updates.isCompleted ? 1 : 0);
   }
-
+  if (!db) {
+    throw new Error('Database connection failed');
+  }
   if (fieldsToUpdate.length === 0) {
     return db.get('SELECT * FROM tasks WHERE id = ?', taskId);
   }
@@ -173,7 +231,7 @@ export async function updateTask(
 export async function createUser(
   newUserData: Omit<UserDB, 'id'>,
 ): Promise<User> {
-  const db = await getDb();
+  const db = await ensureDbConnection();
 
   const newUser: User = {
     id: `user-${Date.now()}`,

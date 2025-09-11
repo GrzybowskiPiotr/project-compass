@@ -3,7 +3,7 @@ export const MockProject: Project = {
   id: '1',
   name: 'Projet pobrany z Bazy Danych',
   createdAt: new Date(),
-  userId: 'user-123',
+  userId: 'user-test-123',
   tasks: [
     {
       id: '1',
@@ -55,5 +55,10 @@ export const MockProject: Project = {
 export const MockUser: User = {
   id: 'user-123',
   email: 'test@test.com',
-  password: 'password',
+  name: 'Jan Kowaslki',
 };
+
+export const MOCK_USER_PASSWORD = 'password';
+export const MOCK_USER_EMAIL = 'test@test.com';
+export const MOCK_USER_HASHED_PASSWORD =
+  '$2b$10$JtM0Pe4MpCFmKECwCHcQSuZBVOStj1A4oq01/BfVwrmqIGSicIoHe';

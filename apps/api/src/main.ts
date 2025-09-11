@@ -1,13 +1,19 @@
-import { Task, User } from '@project-compass/shared-types';
+import { Task } from '@project-compass/shared-types';
 import bcrypt from 'bcrypt';
 import express from 'express';
 import * as path from 'path';
-import { MockProject } from './consts/mocks';
+import { generateToken, verifyToken } from './auth/auth.service';
+import {
+  MOCK_USER_EMAIL,
+  MOCK_USER_HASHED_PASSWORD,
+  MockProject,
+} from './consts/mocks';
 import {
   createTask,
   createUser,
   deleteTaskAndChildren,
-  getDb,
+  ensureDbConnection,
+  findUserByEmail,
   getProjectWithTasks,
   initializeDatabase,
   updateTask,
@@ -21,7 +27,7 @@ const server = app.listen(port, () => {
 });
 
 async function seedDatabase() {
-  const db = await getDb();
+  const db = await ensureDbConnection();
   const projectExists = await db.get(
     'SELECT * FROM projects WHERE id = ?',
     MockProject.id,
@@ -29,6 +35,15 @@ async function seedDatabase() {
 
   if (!projectExists) {
     console.log('Seeding database with initial data...');
+
+    await db.run(
+      ' INSERT INTO users (id, name, email, password) VALUES (?,?,?,?)',
+      'user-test-123',
+      'Jan Test Kowalski',
+      MOCK_USER_EMAIL,
+      MOCK_USER_HASHED_PASSWORD,
+    );
+
     await db.run(
       'INSERT INTO projects (id, name, createdAt, userId) VALUES (?,?,?,?)',
       MockProject.id,
@@ -71,16 +86,26 @@ app.get('/api/project/:id', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
 
-    if (authHeader === 'Bearer mock-jwt-token') {
-      const { id } = req.params;
-      const project = await getProjectWithTasks(id);
-      if (project) {
-        res.send(project);
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const payload = verifyToken(token);
+
+      if (payload) {
+        console.log(`User ${payload.userId} is accessing project...`);
+        const { id: projectID } = req.params;
+        const userId = payload.userId;
+        const project = await getProjectWithTasks(userId, projectID);
+
+        if (project) {
+          res.send(project);
+        } else {
+          res.status(404).send({ message: 'Project not found' });
+        }
       } else {
-        res.status(404).send({ message: 'Project not found' });
+        res.status(401).send({ message: 'Unauthorized: Invalid token' });
       }
     } else {
-      res.status(404).send({ message: 'Forbidden: Access denied' });
+      res.status(401).send({ message: 'Unauthorized: No token provided' });
     }
   } catch (error) {
     console.error('Error fetching project:', error);
@@ -145,17 +170,18 @@ app.post('/api/auth/login', async (req, res) => {
     return;
   }
 
-  if (email === 'test@test.com' && password === 'password') {
-    const user: User = {
-      id: '1',
-      email: 'test@test.com',
-      name: 'Jan Kowalski',
-    };
-    const token = 'mock-jwt-token';
+  const user = await findUserByEmail(email);
 
-    res.status(200).send({ user, token });
-  } else {
-    res.status(401).send({ message: 'Invalid credentials' });
+  if (user === undefined) res.status(401).send({ message: 'User not found' });
+
+  if (user !== undefined) {
+    const dosePasswordMatch = await bcrypt.compare(password, user.password);
+    if (dosePasswordMatch) {
+      const token = generateToken(user);
+      res.status(200).send({ user, token });
+    } else {
+      res.status(401).send({ message: 'Invalid credentials' });
+    }
   }
 });
 
@@ -169,7 +195,8 @@ app.post('/api/auth/register', async (req, res) => {
   try {
     const hashPassword = await bcrypt.hash(password, 10);
     const createdUser = await createUser({ name, email, hashPassword });
-    res.status(201).send(createdUser);
+    const token = generateToken(createdUser);
+    res.status(201).send({ ...createdUser, token });
     return;
   } catch (error) {
     res.status(409).send({

@@ -2,7 +2,7 @@ import { Button } from '@project-compass/shared-ui';
 import { Form } from 'react-router';
 import { useAuth } from './useAuth';
 export function LoginForm() {
-  const { email, password, setEmail, setPassword, handleSubmit } = useAuth();
+  const { email, password, setEmail, setPassword, handleLogin } = useAuth();
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col items-center justify-center p-4 ">
@@ -10,7 +10,7 @@ export function LoginForm() {
         <h2 className="text-2xl text-center uppercase text-white font-bold mb-6">
           Zaloguj się
         </h2>
-        <Form onSubmit={handleSubmit}>
+        <Form onSubmit={handleLogin}>
           <div className="flex flex-col gap-4">
             <div className="flex flex-col">
               <label className="text-white font-bold" htmlFor="email-input">

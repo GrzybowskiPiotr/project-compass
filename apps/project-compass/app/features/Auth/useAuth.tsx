@@ -23,12 +23,12 @@ export function useAuth() {
     if (response.ok) {
       const newUser = await response.json();
       console.log(
-        `Response from API: UserName: ${newUser.name} UserId: ${newUser.id}`,
+        `Response from API: UserName: ${newUser.name} UserId: ${newUser.id} token: ${newUser.token}`,
       );
     }
   };
 
-  const handleSubmit = async function (e: React.FormEvent) {
+  const handleLogin = async function (e: React.FormEvent) {
     e.preventDefault();
     const response = await fetch('/api/auth/login', {
       method: 'POST',
@@ -58,7 +58,7 @@ export function useAuth() {
     setName,
     confirmPassword,
     setConfirmPassword,
-    handleSubmit,
+    handleLogin,
     handleRegister,
   };
 }

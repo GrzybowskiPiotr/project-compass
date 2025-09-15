@@ -20,9 +20,18 @@ export interface User {
   name: string;
 }
 
+export interface TestUser extends User {
+  password: string;
+}
+
 export interface UserDB {
   id: string;
   email: string;
   name: string;
   hashPassword: string;
+}
+
+export interface AuthPayload {
+  userId: string;
+  email: string;
 }

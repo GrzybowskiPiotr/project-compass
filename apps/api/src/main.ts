@@ -9,6 +9,7 @@ import {
   MockProject,
 } from './consts/mocks';
 import {
+  createProject,
   createTask,
   createUser,
   deleteTaskAndChildren,
@@ -207,5 +208,34 @@ app.post('/api/auth/register', async (req, res) => {
     return;
   }
 });
+app.post('/api/projects', async (req, res) => {
+  try {
+    const authHeared = req.headers.authorization;
 
+    if (authHeared && authHeared.startsWith('Bearer ')) {
+      const token = authHeared.split(' ')[1];
+      const payload = verifyToken(token);
+
+      if (payload) {
+        const { name } = req.body;
+        const userId = payload.userId;
+
+        if (!name || name.trim().length === 0) {
+          return res.status(400).send({ message: 'Project name is required' });
+        }
+
+        const newProject = await createProject(name, userId);
+        res.status(201).send(newProject);
+      } else {
+        res.status(401).send({ message: 'Unauthorized: Invalid token' });
+      }
+    } else {
+      res.status(401).send({ message: 'Unauthorized: No token provided' });
+    }
+  } catch (error) {
+    console.error('Error creating project: ', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+  return;
+});
 server.on('error', console.error);

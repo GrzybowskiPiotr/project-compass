@@ -58,12 +58,11 @@ export async function createProject(
   };
 
   await db.run(
-    `INSER INTO projects (id, name, createdAt, userId) VALUES (?,?,?,?)`,
+    `INSERT INTO projects (id, name, createdAt, userId) VALUES (?,?,?,?)`,
     newProject.id,
     newProject.name,
     newProject.createdAt.toISOString(),
-    newProject,
-    userId,
+    newProject.userId,
   );
   return newProject;
 }

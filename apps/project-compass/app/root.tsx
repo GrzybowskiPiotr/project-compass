@@ -1,3 +1,5 @@
+import { useEffect } from 'react';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import {
   Links,
   Meta,
@@ -9,7 +11,9 @@ import {
 } from 'react-router';
 import stylesHref from '../styles.css?url';
 import { AppNav } from './app-nav';
-import { AuthProvider } from './context/AuthContext';
+import { checkAuth } from './features/Auth/auth.slice';
+import { clearProjectError } from './features/Projects/projects.slice';
+import store, { AppDispatch, RootState } from './store/store';
 
 export const meta: MetaFunction = () => [
   {
@@ -31,24 +35,55 @@ export const links: LinksFunction = () => [
   { rel: 'stylesheet', href: stylesHref },
 ];
 
+function AuthHydrationWrapper({ children }: { children: React.ReactNode }) {
+  const dispatch: AppDispatch = useDispatch();
+  const { isHydrated, status: authStatus } = useSelector(
+    (state: RootState) => state.auth,
+  );
+  useEffect(() => {
+    if (typeof window !== 'undefined' && !isHydrated) {
+      dispatch(checkAuth());
+      dispatch(clearProjectError());
+    }
+  }, [dispatch, isHydrated]);
+
+  if (!isHydrated && authStatus === 'loading') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-blue-400 to-blue-600 text-white text-lg">
+        Ładowanie autentykacji...
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export function Layout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <html lang="pl">
-        <head>
-          <meta charSet="utf-8" />
-          <meta name="viewport" content="width=device-width, initial-scale=1" />
-          <Meta />
-          <Links />
-        </head>
-        <body>
-          <AppNav />
-          {children}
-          <ScrollRestoration />
-          <Scripts />
-        </body>
-      </html>
-    </AuthProvider>
+    <html lang="pl">
+      <head>
+        <meta charSet="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <Meta />
+        <Links />
+        <script
+          src="https://kit.fontawesome.com/95c5ab3364.js"
+          crossOrigin="anonymous"
+        ></script>
+      </head>
+      <body>
+        <Provider store={store}>
+          <AuthHydrationWrapper>
+            <AppNav />
+            <div className="min-h-screen min-w-full bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col items-start p-4">
+              {children}
+            </div>
+          </AuthHydrationWrapper>
+        </Provider>
+        <ScrollRestoration />
+        <Scripts />
+      </body>
+    </html>
   );
 }
 

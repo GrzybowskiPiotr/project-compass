@@ -4,6 +4,7 @@ export const MockProject: Project = {
   name: 'Projet pobrany z Bazy Danych',
   createdAt: new Date(),
   userId: 'user-test-123',
+  updatedAt: new Date(),
   tasks: [
     {
       id: '1',

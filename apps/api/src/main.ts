@@ -15,7 +15,9 @@ import {
   deleteTaskAndChildren,
   ensureDbConnection,
   findUserByEmail,
+  getAllProjectsForUser,
   getProjectWithTasks,
+  getUserById,
   initializeDatabase,
   updateTask,
 } from './database';
@@ -83,7 +85,35 @@ initializeDatabase().then(() => {
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
 
-app.get('/api/project/:id', async (req, res) => {
+app.get('/api/projects', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer')) {
+      const token = authHeader.split(' ')[1];
+      const payload = verifyToken(token);
+      if (payload) {
+        const userId = payload.userId;
+        const allProjectsOwendByUser = await getAllProjectsForUser(userId);
+
+        if (allProjectsOwendByUser) {
+          res.send(allProjectsOwendByUser);
+        } else {
+          res.status(404).send({ message: "Can't find projects for user" });
+        }
+      } else {
+        res.status(401).send({ message: 'Unauthorized: Invalid token' });
+      }
+    } else {
+      res.status(401).send({ message: 'Unauthorized: No token provided' });
+    }
+  } catch (error) {
+    console.error('Error fetching project:', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
+
+app.get('/api/projects/:id', async (req, res) => {
+  console.log(`getting project of id: ${req.params.id}`);
   try {
     const authHeader = req.headers.authorization;
 
@@ -185,7 +215,32 @@ app.post('/api/auth/login', async (req, res) => {
     }
   }
 });
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const payload = verifyToken(token);
 
+      if (payload) {
+        const user = await getUserById(payload.userId); //do zaimplementowania pobiranie Usera z bazy po ID;
+        if (user) {
+          const { password, ...userWithoutPassword } = user;
+          res.send(userWithoutPassword);
+        } else {
+          res.status(404).send({ message: 'User not found' });
+        }
+      } else {
+        res.status(401).send({ message: 'Unauthorized: Invalid token' });
+      }
+    } else {
+      res.status(401).send({ message: 'Unauthorized: No token provided' });
+    }
+  } catch (error) {
+    console.error('Error fetching user: ', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+});
 app.post('/api/auth/register', async (req, res) => {
   const { name, email, password } = req.body;
   //Prosta walidacja trzymanyc danych.Walidujemy zawsze dane wejsciowe przeda zamisem do DB lub przed przetwarznienm.
@@ -197,7 +252,7 @@ app.post('/api/auth/register', async (req, res) => {
     const hashPassword = await bcrypt.hash(password, 10);
     const createdUser = await createUser({ name, email, hashPassword });
     const token = generateToken(createdUser);
-    res.status(201).send({ ...createdUser, token });
+    res.status(201).send({ user: { ...createdUser }, token });
     return;
   } catch (error) {
     res.status(409).send({
@@ -217,14 +272,14 @@ app.post('/api/projects', async (req, res) => {
       const payload = verifyToken(token);
 
       if (payload) {
-        const { name } = req.body;
+        const { name, description } = req.body;
         const userId = payload.userId;
 
         if (!name || name.trim().length === 0) {
           return res.status(400).send({ message: 'Project name is required' });
         }
 
-        const newProject = await createProject(name, userId);
+        const newProject = await createProject(name, userId, description);
         res.status(201).send(newProject);
       } else {
         res.status(401).send({ message: 'Unauthorized: Invalid token' });

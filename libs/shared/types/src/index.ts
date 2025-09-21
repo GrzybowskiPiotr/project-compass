@@ -8,16 +8,19 @@ export interface Task {
 
 export interface Project {
   id: string;
-  userId?: string;
+  userId: string;
   name: string;
   createdAt: Date;
+  updatedAt: Date;
   tasks: Task[];
+  description?: string;
 }
 
 export interface User {
   id: string;
   email: string;
   name: string;
+  password?: string;
 }
 
 export interface TestUser extends User {
@@ -34,4 +37,9 @@ export interface UserDB {
 export interface AuthPayload {
   userId: string;
   email: string;
+}
+
+export interface AuthResponse {
+  user: User;
+  token: string;
 }

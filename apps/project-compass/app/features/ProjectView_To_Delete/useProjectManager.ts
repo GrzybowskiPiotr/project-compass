@@ -1,6 +1,6 @@
 import { Project, Task } from '@project-compass/shared-types';
 import { useEffect, useState } from 'react';
-import { useAuthContext } from '../../context/AuthContext';
+// import { useAuthContext } from '../../context/AuthContext';
 
 const updateTaskInTree = (
   tasks: Task[],
@@ -199,34 +199,34 @@ export function useProjectManager() {
     });
   };
 
-  const { user, token } = useAuthContext();
+  // const { user, token } = useAuthContext();
 
-  useEffect(() => {
-    if (user && token) {
-      fetch(`/api/project/1`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      })
-        .then((response) => {
-          if (!response.ok) {
-            throw new Error('Failed to resive project data');
-          }
-          return response.json();
-        })
-        .then((data: Project) => {
-          setProject(data);
-        })
-        .catch((error) => {
-          console.error('Błąd podczas pobierania projektu', error);
-        })
-        .finally(() => {
-          setIsLoading(false);
-        });
-    } else {
-      setIsLoading(false);
-    }
-  }, [user, token]);
+  // useEffect(() => {
+  //   if (user && token) {
+  //     fetch(`/api/project/1`, {
+  //       headers: {
+  //         Authorization: `Bearer ${token}`,
+  //       },
+  //     })
+  //       .then((response) => {
+  //         if (!response.ok) {
+  //           throw new Error('Failed to resive project data');
+  //         }
+  //         return response.json();
+  //       })
+  //       .then((data: Project) => {
+  //         setProject(data);
+  //       })
+  //       .catch((error) => {
+  //         console.error('Błąd podczas pobierania projektu', error);
+  //       })
+  //       .finally(() => {
+  //         setIsLoading(false);
+  //       });
+  //   } else {
+  //     setIsLoading(false);
+  //   }
+  // }, [user, token]);
 
   return {
     isLoading,

@@ -46,22 +46,26 @@ export async function ensureDbConnection(): Promise<Database> {
 export async function createProject(
   name: string,
   userId: string,
+  description: string,
 ): Promise<Project> {
   const db = await ensureDbConnection();
 
   const newProject: Project = {
     id: `project-${Date.now()}`,
     createdAt: new Date(),
+    updatedAt: new Date(),
     userId,
     tasks: [],
+    description,
     name,
   };
 
   await db.run(
-    `INSERT INTO projects (id, name, createdAt, userId) VALUES (?,?,?,?)`,
+    `INSERT INTO projects (id, name, createdAt, description, userId) VALUES (?,?,?,?,?)`,
     newProject.id,
     newProject.name,
     newProject.createdAt.toISOString(),
+    newProject.description,
     newProject.userId,
   );
   return newProject;
@@ -80,7 +84,16 @@ export async function findUserByEmail(email: string) {
 
   return foundUserFromDB;
 }
-
+export async function getUserById(userId: string) {
+  const db = await ensureDbConnection();
+  const foundedUser = db.get(
+    `
+  SELECT * FROM users WHERE id = ?
+  `,
+    userId,
+  );
+  return foundedUser;
+}
 export async function initializeDatabase() {
   const db = await ensureDbConnection();
   await db.exec(`
@@ -88,7 +101,9 @@ export async function initializeDatabase() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       createdAt TEXT NOT NULL,
-      userId TEXT
+      updatedAt TEXT,
+      userId TEXT NOT NULL,
+      description TEXT
     );
   `);
   await db.exec(`
@@ -112,6 +127,18 @@ export async function initializeDatabase() {
     );
     `);
   console.log('Database initialized successfully!');
+}
+
+export async function getAllProjectsForUser(userId: string) {
+  const db = await ensureDbConnection();
+  const allProjects = await db.all(
+    'SELECT * FROM projects WHERE userId = ?',
+    userId,
+  );
+  if (allProjects.length === 0) {
+    return null;
+  }
+  return allProjects;
 }
 
 export async function getProjectWithTasks(

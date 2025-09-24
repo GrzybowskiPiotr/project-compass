@@ -1,7 +1,7 @@
-import { Project } from '@project-compass/shared-types';
+import { Project, Task } from '@project-compass/shared-types';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import api from '../../api/axios';
-
+import { deleteTask } from './ProjectTasks/projectTasks.slice';
 export interface ProjectState {
   projects: Project[];
   selectedProject: Project | null;
@@ -17,7 +17,19 @@ const initialState: ProjectState = {
   error: null,
   currentProjectId: null,
 };
+const deleteTaskFromTree = function (tasks: Task[], taskId: string): Task[] {
+  return tasks.reduce((acc: Task[], task) => {
+    if (task.id === taskId) return acc;
 
+    if (task.subTasks && task.subTasks.length > 0) {
+      const updatedSubtasks = deleteTaskFromTree(task.subTasks, taskId);
+      acc.push({ ...task, subTasks: updatedSubtasks });
+    } else {
+      acc.push(task);
+    }
+    return acc;
+  }, []);
+};
 export const fetchProjects = createAsyncThunk(
   'projects/fetchProjects',
   async (_, { rejectWithValue }) => {
@@ -68,10 +80,11 @@ export const updateProject = createAsyncThunk(
   'projects/updateProject',
   async (project: Project, { rejectWithValue }) => {
     try {
-      const response = await api.put<Project>(
+      const response = await api.patch<Project>(
         `/projects/${project.id}`,
         project,
       );
+      console.log(response.data);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -114,6 +127,25 @@ const projectSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(deleteTask.fulfilled, (state, action) => {
+        const deletedTaskId = action.payload;
+        // zabezpieczenia: project.tasks może być undefined
+        state.projects = state.projects.map((project) => ({
+          ...project,
+          tasks: project.tasks.filter((task) => task.id !== deletedTaskId),
+        }));
+
+        // jeśli selectedProject zawiera usunięty task, zaktualizuj go
+        if (state.selectedProject) {
+          state.selectedProject = {
+            ...state.selectedProject,
+            tasks: deleteTaskFromTree(
+              state.selectedProject.tasks,
+              deletedTaskId,
+            ),
+          };
+        }
+      })
       .addCase(fetchProjects.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -155,9 +187,6 @@ const projectSlice = createSlice({
         state.status = 'succeeded';
         state.error = null;
         state.selectedProject = action.payload;
-        state.projects = state.projects.map((p) =>
-          p.id === action.payload.id ? action.payload : p,
-        );
       })
       .addCase(updateProject.pending, (state) => {
         state.status = 'loading';

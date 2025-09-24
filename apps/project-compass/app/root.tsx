@@ -75,7 +75,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Provider store={store}>
           <AuthHydrationWrapper>
             <AppNav />
-            <div className="min-h-screen min-w-full bg-gradient-to-b from-blue-400 to-blue-600 flex flex-col items-start p-4">
+            <div className="min-h-screen min-w-full bg-gradient-to-b from-gray-600 to-gray-800 flex flex-col items-start p-4">
               {children}
             </div>
           </AuthHydrationWrapper>

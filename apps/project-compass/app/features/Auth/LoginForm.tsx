@@ -5,7 +5,7 @@ export function LoginForm() {
   const { email, password, setEmail, setPassword, handleLogin } = useAuth();
 
   return (
-    <div className="ml-[37%] mt-[5%] min-w-80">
+    <div className="flex w-[95%] h-screen items-center justify-center mt-[-100px]">
       <Form onSubmit={handleLogin} formTitle="Zaloguj się">
         <Input
           name="E-mail"

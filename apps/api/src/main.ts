@@ -9,25 +9,55 @@ import {
   MockProject,
 } from './consts/mocks';
 import {
+  closeDbConnection,
   createProject,
   createTask,
   createUser,
+  deleteProject,
   deleteTaskAndChildren,
   ensureDbConnection,
   findUserByEmail,
   getAllProjectsForUser,
   getProjectWithTasks,
+  getTasksWithinProject,
   getUserById,
   initializeDatabase,
   updateTask,
 } from './database';
-
-const port = process.env.PORT || 3333;
 const app = express();
 app.use(express.json());
-const server = app.listen(port, () => {
-  console.log(`Listening at http://localhost:${port}/api/project/1`);
-});
+
+async function start() {
+  await ensureDbConnection();
+  const port = process.env.PORT || 3333;
+
+  const server = app.listen(port, () => {
+    console.log(`Server started. Listening at http://localhost:${port}`);
+  });
+  // graceful shutdown
+  const shutdown = async (signal?: string) => {
+    console.log(`Recieived ${signal ?? 'shutdown'}. Closing HTTP server...`);
+    server.close(async (error) => {
+      if (error) {
+        console.error('Error during server shutdown', error);
+        process.exit(1);
+      }
+      await closeDbConnection();
+      console.log('DB closed, exiting process.');
+      process.exit(0);
+    });
+    setTimeout(() => {
+      console.warn('Forcing shutdown');
+      process.exit(1);
+    }, 10_000).unref();
+  };
+  process.on('SIGINT', () => shutdown('SIGINT'));
+  process.on('SIGTERM', () => shutdown('SIGTERM'));
+  process.on('uncaughtException', async (err) => {
+    console.error('Uncaught exception', err);
+    // await shutdown('uncaughtException');
+  });
+}
 
 async function seedDatabase() {
   const db = await ensureDbConnection();
@@ -84,7 +114,7 @@ initializeDatabase().then(() => {
 });
 
 app.use('/assets', express.static(path.join(__dirname, 'assets')));
-
+//API Endopints for Projects
 app.get('/api/projects', async (req, res) => {
   try {
     const authHeader = req.headers.authorization;
@@ -111,7 +141,6 @@ app.get('/api/projects', async (req, res) => {
     res.status(500).send({ message: 'Internal Server Error' });
   }
 });
-
 app.get('/api/projects/:id', async (req, res) => {
   console.log(`getting project of id: ${req.params.id}`);
   try {
@@ -143,7 +172,73 @@ app.get('/api/projects/:id', async (req, res) => {
     res.status(500).send({ message: 'Internal Server Error' });
   }
 });
+app.post('/api/projects', async (req, res) => {
+  try {
+    const authHeared = req.headers.authorization;
 
+    if (authHeared && authHeared.startsWith('Bearer ')) {
+      const token = authHeared.split(' ')[1];
+      const payload = verifyToken(token);
+
+      if (payload) {
+        const { name, description } = req.body;
+        const userId = payload.userId;
+
+        if (!name || name.trim().length === 0) {
+          return res.status(400).send({ message: 'Project name is required' });
+        }
+
+        const newProject = await createProject(name, userId, description);
+        res.status(201).send(newProject);
+      } else {
+        res.status(401).send({ message: 'Unauthorized: Invalid token' });
+      }
+    } else {
+      res.status(401).send({ message: 'Unauthorized: No token provided' });
+    }
+  } catch (error) {
+    console.error('Error creating project: ', error);
+    res.status(500).send({ message: 'Internal Server Error' });
+  }
+  return;
+});
+app.patch('/api/projects/:id', async (req, res) => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const playload = verifyToken(token);
+
+      if (playload) {
+        const { id: projectId } = req.params;
+        const userId = playload.userId;
+        const { name, description } = req.body;
+
+        res.send({ name, description, projectId, userId });
+      }
+    }
+  } catch (error) {
+    console.error('Error while updating project: ', error);
+    res.status(500).send({ message: 'Internal server error' });
+  }
+});
+app.delete('/api/projects/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!id) {
+      res.status(400).send({ message: 'Project id is required' });
+      return;
+    }
+    await deleteProject(id);
+    res.status(204).send(id);
+  } catch (error) {
+    console.error('Error deleting project: ', error);
+    res.status(500).send({ message: 'Internal server error' });
+  }
+});
+
+//API Endpoints for Tasks
 app.post('/api/tasks', async (req, res) => {
   try {
     const { title, projectId, parentId } = req.body;
@@ -192,7 +287,21 @@ app.patch('/api/tasks/:id', async (req, res) => {
     res.status(500).send({ message: 'An internal server error occurred' });
   }
 });
-
+app.get('/api/:projectId/tasks/', async (req, res) => {
+  const { projectId } = req.params;
+  if (!projectId) {
+    res.status(400).send({ message: 'Project id is required' });
+    return;
+  }
+  try {
+    const tasks = await getTasksWithinProject(projectId);
+    res.status(200).send(tasks);
+  } catch (error) {
+    console.error('Error fetching tasks:', error);
+    res.status(500).send({ message: 'An internal server error occurred' });
+  }
+});
+//API Endpoints for Users (Authentication)
 app.post('/api/auth/login', async (req, res) => {
   const { email, password } = req.body;
 
@@ -263,34 +372,8 @@ app.post('/api/auth/register', async (req, res) => {
     return;
   }
 });
-app.post('/api/projects', async (req, res) => {
-  try {
-    const authHeared = req.headers.authorization;
 
-    if (authHeared && authHeared.startsWith('Bearer ')) {
-      const token = authHeared.split(' ')[1];
-      const payload = verifyToken(token);
-
-      if (payload) {
-        const { name, description } = req.body;
-        const userId = payload.userId;
-
-        if (!name || name.trim().length === 0) {
-          return res.status(400).send({ message: 'Project name is required' });
-        }
-
-        const newProject = await createProject(name, userId, description);
-        res.status(201).send(newProject);
-      } else {
-        res.status(401).send({ message: 'Unauthorized: Invalid token' });
-      }
-    } else {
-      res.status(401).send({ message: 'Unauthorized: No token provided' });
-    }
-  } catch (error) {
-    console.error('Error creating project: ', error);
-    res.status(500).send({ message: 'Internal Server Error' });
-  }
-  return;
+start().catch((e) => {
+  console.error('Failed to start', e);
+  process.exit(1);
 });
-server.on('error', console.error);

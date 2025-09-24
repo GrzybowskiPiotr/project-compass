@@ -17,7 +17,7 @@ export default [
     //Route for showing project details.
     route(
       'projects/:id',
-      './features/Projects/ProjectDetails/ProjectDetailsPage.tsx',
+      './features/Projects/ProjectOverview/ProjectDetailsPage.tsx',
     ),
   ]),
 ] satisfies RouteConfig;

@@ -17,6 +17,10 @@ export function AppNav() {
     navigate('/login');
   };
 
+  const handleNavLinkClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    e.currentTarget.blur();
+  };
+
   return (
     <nav className="flex gap-4 p-4 bg-gray-800 text-white">
       <div className="flex justify-between w-full">
@@ -25,8 +29,9 @@ export function AppNav() {
             <NavLink
               to="/"
               className={
-                'px-4 py-2 text-sm cursor-pointer rounded font-semibold transition-colors focus:outline-none focus:ring-2 focus: ring-offset-2 bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 '
+                'px-4 py-2 text-sm cursor-pointer rounded font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500 '
               }
+              onClick={handleNavLinkClick}
             >
               Projekty
             </NavLink>

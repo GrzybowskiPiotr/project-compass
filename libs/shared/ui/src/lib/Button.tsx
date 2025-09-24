@@ -8,6 +8,7 @@ type ButtonProps = {
 export function Button({
   children,
   className,
+  onClick,
   variant = 'primary',
   size = 'medium',
   ...rest
@@ -31,7 +32,14 @@ export function Button({
   );
 
   return (
-    <button className={combinedClassName} {...rest}>
+    <button
+      className={combinedClassName}
+      onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
+        onClick?.(e);
+        e.currentTarget.blur();
+      }}
+      {...rest}
+    >
       {children}
     </button>
   );

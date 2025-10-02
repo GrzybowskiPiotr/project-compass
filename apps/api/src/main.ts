@@ -22,6 +22,7 @@ import {
   getTasksWithinProject,
   getUserById,
   initializeDatabase,
+  updateProjectWithId,
   updateTask,
 } from './database';
 const app = express();
@@ -78,11 +79,12 @@ async function seedDatabase() {
     );
 
     await db.run(
-      'INSERT INTO projects (id, name, createdAt, userId) VALUES (?,?,?,?)',
+      'INSERT INTO projects (id, name, createdAt, userId, updatedAt) VALUES (?,?,?,?,?)',
       MockProject.id,
       MockProject.name,
       MockProject.createdAt.toISOString(),
       MockProject.userId,
+      MockProject.updatedAt.toISOString(),
     );
 
     const insertTasksRecursively = async (
@@ -142,7 +144,6 @@ app.get('/api/projects', async (req, res) => {
   }
 });
 app.get('/api/projects/:id', async (req, res) => {
-  console.log(`getting project of id: ${req.params.id}`);
   try {
     const authHeader = req.headers.authorization;
 
@@ -151,7 +152,6 @@ app.get('/api/projects/:id', async (req, res) => {
       const payload = verifyToken(token);
 
       if (payload) {
-        console.log(`User ${payload.userId} is accessing project...`);
         const { id: projectID } = req.params;
         const userId = payload.userId;
         const project = await getProjectWithTasks(userId, projectID);
@@ -214,8 +214,16 @@ app.patch('/api/projects/:id', async (req, res) => {
         const { id: projectId } = req.params;
         const userId = playload.userId;
         const { name, description } = req.body;
+        try {
+          const updatedProject = await updateProjectWithId(projectId, userId, {
+            name,
+            description,
+          });
 
-        res.send({ name, description, projectId, userId });
+          res.status(201).send(updatedProject);
+        } catch (error) {
+          res.status(500).send({ message: error });
+        }
       }
     }
   } catch (error) {
@@ -287,6 +295,7 @@ app.patch('/api/tasks/:id', async (req, res) => {
     res.status(500).send({ message: 'An internal server error occurred' });
   }
 });
+//pobranie wyszstkich tasków -> płaska tablica tasków. Poprawić na zagnieżdzoną tablcę.
 app.get('/api/:projectId/tasks/', async (req, res) => {
   const { projectId } = req.params;
   if (!projectId) {

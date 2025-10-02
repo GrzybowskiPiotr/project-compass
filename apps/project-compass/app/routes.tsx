@@ -12,7 +12,7 @@ export default [
     //Route for creating new project
     route(
       'projects/new',
-      './features/Projects/ProjectCreate/ProjectCreateForm.tsx',
+      './features/Projects/ProjectOperations/ProjectCreateForm.tsx',
     ),
     //Route for showing project details.
     route(

@@ -1,10 +1,11 @@
 import { Project, User } from '@project-compass/shared-types';
 export const MockProject: Project = {
   id: '1',
-  name: 'Projet pobrany z Bazy Danych',
+  name: 'Projekt pobrany z Bazy Danych',
   createdAt: new Date(),
-  userId: 'user-test-123',
   updatedAt: new Date(),
+  userId: 'user-test-123',
+  description: 'Opis projektu pobrany z bazy danych',
   tasks: [
     {
       id: '1',

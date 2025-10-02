@@ -1,7 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch, RootState } from '../../../store/store';
-import { deleteTask, fetchAllTasks } from './projectTasks.slice';
+import {
+  createSubtask,
+  deleteTask,
+  fetchAllTasks,
+  toggleTaskComplete,
+} from './projectTasks.slice';
+
 export const useTaskManager = function () {
   const [expandedTaskIds, setExpandedTaskIds] = useState<string[]>([]);
   const dispatch: AppDispatch = useDispatch();
@@ -23,6 +29,41 @@ export const useTaskManager = function () {
       if (selectedProject) dispatch(fetchAllTasks(selectedProject?.id));
     }
   }, [dispatch, selectedProject, status]);
+
+  const handleSubTaskAdd = async function (
+    parentId: string,
+    title: string,
+    projectId: string,
+  ) {
+    //obsługa dodwania nowego podzadania
+    if (!title.trim())
+      throw new Error('Sub task title is required to add subtask');
+    if (!parentId) throw new Error('Parent id is required to add new subtask');
+
+    dispatch(createSubtask({ title, parentId, projectId }));
+  };
+
+  const handleToggleComplete = async (taskId: string) => {
+    dispatch(toggleTaskComplete({ taskId, tasks }));
+
+    // const response = await fetch(`/api/tasks/${taskId}`, {
+    //   method: 'PATCH',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ isCompleted: !taskToToggle?.isCompleted }),
+    // });
+
+    // if (response.ok) {
+    //   setProject((p) => {
+    //     if (!p) return null; //Zmiana z null
+    //     return {
+    //       ...p,
+    //       tasks: updateTaskInTree(p.tasks, taskId, {
+    //         isCompleted: !taskToToggle?.isCompleted,
+    //       }),
+    //     };
+    //   });
+    // }
+  };
 
   const handleAddTask = async (title: string, projectId: string) => {
     if (!title.trim()) return;
@@ -56,6 +97,7 @@ export const useTaskManager = function () {
     handleToggleExpand,
     expandedTaskIds,
     handleDeleteTask,
-    // handleToggleComplete,
+    handleSubTaskAdd,
+    handleToggleComplete,
   };
 };

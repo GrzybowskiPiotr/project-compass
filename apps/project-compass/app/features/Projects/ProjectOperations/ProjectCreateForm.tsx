@@ -36,7 +36,7 @@ export default function ProjectCreateForm() {
   return (
     <Form onSubmit={handleSubmit} formTitle="Utwórz nowy projekt">
       <Input
-        name="Nazwa Projektu:"
+        title="Nazwa Projektu:"
         isRequired={true}
         type="common"
         placeHolder="Nadaj nazwę dla projektu"
@@ -44,7 +44,6 @@ export default function ProjectCreateForm() {
         onChange={(e) => setProjectName(e.target.value)}
       />
       <TextArea
-        name="description"
         title="Opis (opcjonalnie):"
         onChange={(e) => setDescription(e.target.value)}
         value={description}

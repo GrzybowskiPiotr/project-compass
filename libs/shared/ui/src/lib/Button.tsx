@@ -3,6 +3,7 @@ type ButtonProps = {
   children: React.ReactNode;
   size?: 'small' | 'medium' | 'large';
   variant?: 'primary' | 'secondary' | 'danger';
+  disabled?: boolean;
 } & React.ComponentProps<'button'>;
 
 export function Button({
@@ -11,6 +12,7 @@ export function Button({
   onClick,
   variant = 'primary',
   size = 'medium',
+  disabled,
   ...rest
 }: ButtonProps) {
   const combinedClassName = clsx(
@@ -18,7 +20,7 @@ export function Button({
     {
       'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500':
         variant === 'primary',
-      'bg-slate-500 hover:bg-slate-600 text-white focus ring-slate-400':
+      'bg-slate-500 hover:bg-blue-600 text-white focus ring-slate-400':
         variant === 'secondary',
       'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500':
         variant === 'danger',
@@ -28,12 +30,14 @@ export function Button({
       'px-2 py-1 text-xs': size === 'small',
       'px-6 py-3 text-base': size === 'large',
     },
+    disabled && 'opacity-50 cursor-not-allowed hover:opacity-50',
     className,
   );
 
   return (
     <button
       className={combinedClassName}
+      disabled={disabled}
       onClick={(e: React.MouseEvent<HTMLButtonElement>) => {
         onClick?.(e);
         e.currentTarget.blur();

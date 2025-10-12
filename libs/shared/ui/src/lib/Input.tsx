@@ -1,15 +1,15 @@
 export type inputProps = {
   type: 'email' | 'password' | 'common' | 'number';
-  name: string;
+  title: string;
   isRequired: boolean;
   placeHolder: string;
   onChange: (e: any) => void;
   additionalClassName?: string;
-  value: string;
+  value?: string | undefined;
 };
 
 export function Input({
-  name,
+  title,
   type,
   isRequired,
   placeHolder,
@@ -22,13 +22,13 @@ export function Input({
 
   return (
     <div className="flex flex-col">
-      <label className="text-white font-bold" htmlFor={`input-${name}`}>
-        {name}
+      <label className="text-white font-bold" htmlFor={`input-${title}`}>
+        {title}
       </label>
       <input
-        id={`input-${name}`}
+        id={`input-${title}`}
         type={type === 'common' ? 'text' : type}
-        name={name}
+        name={title}
         value={value}
         required={isRequired}
         className={`${defaultClassName} ${additionalClassName}`}

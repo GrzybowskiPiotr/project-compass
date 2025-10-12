@@ -1,7 +1,7 @@
 import { AuthResponse, User } from '@project-compass/shared-types';
 import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
 import api from '../../api/axios';
-import { clearProjects } from '../Projects/projects.slice';
+import { clearProjects } from '../Projects/Projects/projects.slice';
 
 export interface AuthState {
   user: User | null;

@@ -4,14 +4,11 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { open } from 'sqlite';
 import sqlite3 from 'sqlite3';
-type Database = Awaited<ReturnType<typeof open>>;
+type DatabaseType = Awaited<ReturnType<typeof open>>;
+let db: DatabaseType | null = null;
 
-let db: Database | null = null;
-
-export async function getDb() {
-  if (db) {
-    return db;
-  }
+export async function getDb(): Promise<DatabaseType | null> {
+  if (db) return db;
 
   if (process.env.DATABASE_PATH === undefined) {
     console.error('Path to database is not provided');
@@ -30,11 +27,13 @@ export async function getDb() {
     filename: dbPath,
     driver: sqlite3.Database,
   });
-
+  await db.exec('PRAGMA foreign_keys = ON;');
+  await db.exec('PRAGMA journal_mode = WAL;');
+  await db.exec('PRAGMA busy_timeout = 5000;');
   return db;
 }
 
-export async function ensureDbConnection(): Promise<Database> {
+export async function ensureDbConnection(): Promise<DatabaseType> {
   const database = await getDb();
   if (!database) {
     throw new Error(
@@ -43,56 +42,34 @@ export async function ensureDbConnection(): Promise<Database> {
   }
   return database;
 }
-export async function createProject(
-  name: string,
-  userId: string,
-  description: string,
-): Promise<Project> {
-  const db = await ensureDbConnection();
 
-  const newProject: Project = {
-    id: `project-${Date.now()}`,
-    createdAt: new Date(),
-    updatedAt: new Date(),
-    userId,
-    tasks: [],
-    description,
-    name,
-  };
-
-  await db.run(
-    `INSERT INTO projects (id, name, createdAt, description, userId) VALUES (?,?,?,?,?)`,
-    newProject.id,
-    newProject.name,
-    newProject.createdAt.toISOString(),
-    newProject.description,
-    newProject.userId,
-  );
-  return newProject;
+export async function closeDbConnection() {
+  if (db) {
+    try {
+      await db.close();
+    } catch (error) {
+      console.error('Error closing DB: ', error);
+    } finally {
+      db = null;
+    }
+  }
 }
-
-export async function findUserByEmail(email: string) {
-  if (email.trim().length === 0) return;
-
-  const db = await ensureDbConnection();
-  const foundUserFromDB = await db.get(
-    `
-    SELECT * FROM users WHERE email = ?
-    `,
-    email,
-  );
-
-  return foundUserFromDB;
-}
-export async function getUserById(userId: string) {
-  const db = await ensureDbConnection();
-  const foundedUser = db.get(
-    `
-  SELECT * FROM users WHERE id = ?
-  `,
-    userId,
-  );
-  return foundedUser;
+export async function forceReopenDbIfClosed() {
+  if (db) {
+    try {
+      await db.get('SELECT 1');
+      return db;
+    } catch (error) {
+      console.warn('DB connection was closed, reopening...', error);
+      try {
+        await db.close();
+      } catch {
+        console.warn('DB was already closed.');
+      }
+      db = null;
+    }
+  }
+  return ensureDbConnection();
 }
 export async function initializeDatabase() {
   const db = await ensureDbConnection();
@@ -101,7 +78,7 @@ export async function initializeDatabase() {
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL,
       createdAt TEXT NOT NULL,
-      updatedAt TEXT,
+      updatedAt TEXT NOT NULL,
       userId TEXT NOT NULL,
       description TEXT
     );
@@ -129,18 +106,83 @@ export async function initializeDatabase() {
   console.log('Database initialized successfully!');
 }
 
-export async function getAllProjectsForUser(userId: string) {
-  const db = await ensureDbConnection();
-  const allProjects = await db.all(
-    'SELECT * FROM projects WHERE userId = ?',
-    userId,
-  );
-  if (allProjects.length === 0) {
-    return null;
-  }
-  return allProjects;
-}
+//utils functions
+const buildTaskTree = (
+  tasks: Task[],
+  parentid: string | null = null,
+): Task[] => {
+  return tasks
+    .filter((task) => task.parentId === parentid)
+    .map((task) => ({
+      ...task,
+      isCompleted: !!task.isCompleted,
+      createdAt: new Date(task.createdAt),
+      subTasks: buildTaskTree(tasks, task.id),
+    }));
+};
+//utils functions
 
+// CRUD operations for Projects
+export async function createProject(
+  name: string,
+  userId: string,
+  description: string,
+): Promise<Project> {
+  const db = await ensureDbConnection();
+
+  const newProject: Project = {
+    id: `project-${Date.now()}`,
+    createdAt: new Date(),
+    updatedAt: new Date(),
+    userId,
+    tasks: [],
+    description,
+    name,
+  };
+
+  await db.run(
+    `INSERT INTO projects (id, name, createdAt, description, userId, updatedAt) VALUES (?,?,?,?,?,?)`,
+    newProject.id,
+    newProject.name,
+    newProject.createdAt.toISOString(),
+    newProject.description,
+    newProject.userId,
+    newProject.updatedAt.toISOString(),
+  );
+  return newProject;
+}
+export async function updateProjectWithId(
+  projectId: string,
+  userId: string,
+  newProjectData: { name: string; description: string },
+) {
+  const db = await ensureDbConnection();
+  const updatedAt = new Date();
+  const sql = `
+  UPDATE projects
+  SET name = ?, description = ?, updatedAt = ?
+  WHERE id = ?
+  `;
+  try {
+    await db.run(sql, [
+      newProjectData.name,
+      newProjectData.description,
+      updatedAt.toISOString(),
+      projectId,
+    ]);
+  } catch (error) {
+    console.error('Faild to update project', error);
+  }
+
+  try {
+    const updatedProject = await getProjectWithTasks(userId, projectId);
+    return updatedProject;
+  } catch (error) {
+    console.error('Faild to get project after update', error);
+  }
+
+  return null;
+}
 export async function getProjectWithTasks(
   userId: string,
   projectId: string,
@@ -161,19 +203,6 @@ export async function getProjectWithTasks(
     projectId,
   );
 
-  const buildTaskTree = (
-    tasks: typeof tasksFromDb,
-    parentid: string | null = null,
-  ): Task[] => {
-    return tasks
-      .filter((task) => task.parentId === parentid)
-      .map((task) => ({
-        ...task,
-        isCompleted: !!task.isCompleted,
-        createdAt: new Date(task.createdAt),
-        subTasks: buildTaskTree(tasks, task.id),
-      }));
-  };
   const tasksTree = buildTaskTree(tasksFromDb);
 
   return {
@@ -182,7 +211,38 @@ export async function getProjectWithTasks(
     tasks: tasksTree,
   };
 }
+export async function deleteProject(projectId: string) {
+  const db = await ensureDbConnection();
 
+  try {
+    const tasksToDelete = await db.all<{ id: string }[]>(
+      'SELECT id FROM tasks WHERE projectId = ?',
+      projectId,
+    );
+    for (const { id } of tasksToDelete) {
+      await deleteTaskAndChildren(id, db);
+    }
+
+    await db.run('DELETE FROM projects WHERE id = ?', projectId);
+  } catch (error) {
+    console.error('Error deleting project and its tasks:', error);
+    throw error;
+  }
+}
+
+export async function getAllProjectsForUser(userId: string) {
+  const db = await ensureDbConnection();
+  const allProjects = await db.all(
+    'SELECT * FROM projects WHERE userId = ?',
+    userId,
+  );
+  if (allProjects.length === 0) {
+    return null;
+  }
+  return allProjects;
+}
+
+// CRUD operations for Tasks
 export async function createTask(
   title: string,
   projectId: string,
@@ -196,6 +256,7 @@ export async function createTask(
     isCompleted: false,
     createdAt: new Date(),
     subTasks: [],
+    parentId,
   };
 
   await db.run(
@@ -209,18 +270,43 @@ export async function createTask(
   );
   return newTask;
 }
-export async function deleteTaskAndChildren(taskId: string) {
+export async function deleteTaskAndChildren(
+  taskId: string,
+  db?: DatabaseType,
+  visited?: Set<string>,
+) {
+  const localDb = db ?? (await ensureDbConnection());
+
+  visited = visited ?? new Set<string>();
+  if (visited?.has(taskId)) return;
+  visited?.add(taskId);
+
+  try {
+    const children = await localDb.all<{ id: string }[]>(
+      `SELECT id FROM tasks WHERE parentId = ?`,
+      taskId,
+    );
+
+    for (const { id } of children) {
+      await deleteTaskAndChildren(id, localDb, visited);
+    }
+
+    await localDb.run('DELETE FROM tasks WHERE id = ?', taskId);
+  } catch (error) {
+    console.error('Error deleting task and its children:', error);
+    throw error;
+  }
+}
+
+export async function getTasksWithinProject(projectId: string) {
   const db = await ensureDbConnection();
-  const getAllChildrenTasksToDelete = await db.all(
-    'SELECT * FROM tasks WHERE parentId = ?',
-    taskId,
+  const tasks = await db.all(
+    'SELECT * FROM tasks WHERE projectId = ?',
+    projectId,
   );
 
-  for (const childTask of getAllChildrenTasksToDelete) {
-    await deleteTaskAndChildren(childTask.id);
-  }
-
-  await db.run('DELETE FROM tasks WHERE id = ?', taskId);
+  const taskTree = buildTaskTree(tasks);
+  return taskTree;
 }
 
 export async function updateTask(
@@ -254,6 +340,7 @@ export async function updateTask(
 
   return db.get(`SELECT * FROM tasks WHERE id = ?`, taskId);
 }
+// CRUD operations for Users
 export async function createUser(
   newUserData: Omit<UserDB, 'id'>,
 ): Promise<User> {
@@ -273,4 +360,27 @@ export async function createUser(
     newUserData.hashPassword,
   );
   return newUser;
+}
+export async function findUserByEmail(email: string) {
+  if (email.trim().length === 0) return;
+
+  const db = await ensureDbConnection();
+  const foundUserFromDB = await db.get(
+    `
+    SELECT * FROM users WHERE email = ?
+    `,
+    email,
+  );
+
+  return foundUserFromDB;
+}
+export async function getUserById(userId: string) {
+  const db = await ensureDbConnection();
+  const foundedUser = db.get(
+    `
+  SELECT * FROM users WHERE id = ?
+  `,
+    userId,
+  );
+  return foundedUser;
 }

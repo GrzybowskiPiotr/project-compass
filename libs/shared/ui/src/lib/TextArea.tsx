@@ -1,5 +1,4 @@
 interface TextAreaProp {
-  name: string;
   rows?: number;
   cols?: number;
   disabled?: boolean;
@@ -11,7 +10,6 @@ interface TextAreaProp {
 }
 
 export function TextArea({
-  name,
   title,
   rows = 5,
   cols = 32,
@@ -28,8 +26,8 @@ export function TextArea({
         {title}
       </label>
       <textarea
-        id={name}
-        name={name}
+        id={title}
+        name={title}
         rows={rows}
         cols={cols}
         disabled={disabled}

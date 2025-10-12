@@ -3,6 +3,7 @@ export interface Task {
   title: string;
   isCompleted: boolean;
   createdAt: Date;
+  parentId: string | null;
   subTasks: Task[];
 }
 
@@ -14,6 +15,11 @@ export interface Project {
   updatedAt: Date;
   tasks: Task[];
   description?: string;
+}
+export interface CreateTaskDTO {
+  parentId: string;
+  title: string;
+  projectId: string;
 }
 
 export interface User {

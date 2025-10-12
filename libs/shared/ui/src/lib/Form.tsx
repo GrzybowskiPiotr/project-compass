@@ -4,6 +4,7 @@ export function Form({
   formTitle,
   children,
   onSubmit,
+  ...rest
 }: {
   formTitle: string;
   children: React.ReactNode;
@@ -14,7 +15,7 @@ export function Form({
       <h2 className="text-2xl text-center uppercase text-white font-bold mb-6">
         {formTitle}
       </h2>
-      <RouterForm onSubmit={onSubmit} className="flex flex-col gap-2">
+      <RouterForm onSubmit={onSubmit} className="flex flex-col gap-2" {...rest}>
         {children}
       </RouterForm>
     </div>

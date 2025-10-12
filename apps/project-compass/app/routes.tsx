@@ -8,16 +8,16 @@ export default [
   //Protected route
   route('/', './routes/_protected.tsx', {}, [
     //Default route after user login
-    index('./features/Projects/ProjectsList/ProjectsList.tsx'),
+    index('./features/Projects/Projects/UI/ProjectsList.tsx'),
     //Route for creating new project
     route(
       'projects/new',
-      './features/Projects/ProjectCreate/ProjectCreateForm.tsx',
+      './features/Projects/Projects/UI/ProjectCreateForm.tsx',
     ),
     //Route for showing project details.
     route(
       'projects/:id',
-      './features/Projects/ProjectDetails/ProjectDetailsPage.tsx',
+      './features/Projects/Projects/UI/ProjectDetailsPage.tsx',
     ),
   ]),
 ] satisfies RouteConfig;

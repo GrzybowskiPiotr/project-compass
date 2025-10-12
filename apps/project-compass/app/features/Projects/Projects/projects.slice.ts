@@ -1,6 +1,6 @@
 import { Project } from '@project-compass/shared-types';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import api from '../../api/axios';
+import api from '../../../api/axios';
 
 export interface ProjectState {
   projects: Project[];
@@ -39,7 +39,7 @@ export const createProject = createAsyncThunk(
     { rejectWithValue },
   ) => {
     try {
-      const response = await api.post<Project>('/projects', projectData);
+      const response = await api.post<Project>('/projects/', projectData);
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -67,11 +67,13 @@ export const fetchProjectById = createAsyncThunk(
 export const updateProject = createAsyncThunk(
   'projects/updateProject',
   async (project: Project, { rejectWithValue }) => {
+    console.log('Updating project:', project.name);
     try {
-      const response = await api.put<Project>(
+      const response = await api.patch<Project>(
         `/projects/${project.id}`,
         project,
       );
+
       return response.data;
     } catch (error: any) {
       return rejectWithValue(
@@ -100,7 +102,18 @@ export const deleteProject = createAsyncThunk(
 const projectSlice = createSlice({
   name: 'projects',
   initialState,
-  reducers: {},
+  reducers: {
+    clearProjectError: (state) => {
+      state.error = null;
+    },
+    clearProjects: (state) => {
+      state.projects = [];
+      state.selectedProject = null;
+      state.status = 'idle';
+      state.error = null;
+      state.currentProjectId = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchProjects.pending, (state) => {
@@ -143,10 +156,9 @@ const projectSlice = createSlice({
       .addCase(fetchProjectById.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.error = null;
-        state.selectedProject = action.payload;
-        state.projects = state.projects.map((p) =>
-          p.id === action.payload.id ? action.payload : p,
-        );
+        // state.selectedProject = action.payload;
+        const { tasks, ...projectWithoutTasks } = action.payload;
+        state.selectedProject = projectWithoutTasks as Project;
       })
       .addCase(updateProject.pending, (state) => {
         state.status = 'loading';
@@ -158,6 +170,8 @@ const projectSlice = createSlice({
       })
       .addCase(updateProject.fulfilled, (state, action) => {
         state.status = 'succeeded';
+        console.log('Updated project in state:', action.payload);
+        state.error = null;
         state.projects = state.projects.map((p) =>
           p.id === action.payload.id ? action.payload : p,
         );
@@ -180,5 +194,5 @@ const projectSlice = createSlice({
       });
   },
 });
-
+export const { clearProjectError, clearProjects } = projectSlice.actions;
 export default projectSlice.reducer;

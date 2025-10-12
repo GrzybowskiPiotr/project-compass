@@ -1,14 +1,22 @@
 import { Button, Form, Input } from '@project-compass/shared-ui';
 
+import { useEffect } from 'react';
 import { useAuth } from './useAuth';
 export function LoginForm() {
   const { email, password, setEmail, setPassword, handleLogin } = useAuth();
 
+  useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   return (
-    <div className="ml-[37%] mt-[5%] min-w-80">
+    <div className="flex w-[95%] h-screen items-center justify-center mt-[-100px]">
       <Form onSubmit={handleLogin} formTitle="Zaloguj się">
         <Input
-          name="E-mail"
+          title="E-mail"
           value={email}
           isRequired={true}
           onChange={(e) => setEmail(e.target.value)}
@@ -17,7 +25,7 @@ export function LoginForm() {
         />
         <Input
           type="password"
-          name="Password"
+          title="Password"
           value={password}
           isRequired={true}
           onChange={(e) => setPassword(e.target.value)}

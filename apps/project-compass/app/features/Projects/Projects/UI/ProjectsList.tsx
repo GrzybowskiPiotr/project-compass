@@ -3,9 +3,9 @@ import { Button } from '@project-compass/ui';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
-import { AppDispatch, RootState } from '../../../store/store';
+import { AppDispatch, RootState } from '../../../../store/store';
+import { fetchAllTasks } from '../../ProjectTasks/thunks';
 import { fetchProjects } from '../projects.slice';
-import { fetchAllTasks } from '../ProjectTasks/projectTasks.slice';
 export default function ProjectList() {
   const dispatch: AppDispatch = useDispatch();
   const navigate = useNavigate();

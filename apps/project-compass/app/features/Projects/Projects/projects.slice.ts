@@ -1,8 +1,6 @@
 import { Project } from '@project-compass/shared-types';
 import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import api from '../../api/axios';
-import { deleteTaskFromTree } from './ProjectTasks/helpers/deleteTasksfromTree';
-import { deleteTask } from './ProjectTasks/projectTasks.slice';
+import api from '../../../api/axios';
 
 export interface ProjectState {
   projects: Project[];
@@ -118,18 +116,6 @@ const projectSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-      .addCase(deleteTask.fulfilled, (state, action) => {
-        const deletedTaskId = action.payload;
-        if (state.selectedProject) {
-          state.selectedProject = {
-            ...state.selectedProject,
-            tasks: deleteTaskFromTree(
-              state.selectedProject.tasks,
-              deletedTaskId,
-            ),
-          };
-        }
-      })
       .addCase(fetchProjects.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -170,7 +156,9 @@ const projectSlice = createSlice({
       .addCase(fetchProjectById.fulfilled, (state, action) => {
         state.status = 'succeeded';
         state.error = null;
-        state.selectedProject = action.payload;
+        // state.selectedProject = action.payload;
+        const { tasks, ...projectWithoutTasks } = action.payload;
+        state.selectedProject = projectWithoutTasks as Project;
       })
       .addCase(updateProject.pending, (state) => {
         state.status = 'loading';

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { AppDispatch, RootState } from '../../../store/store';
+import { AppDispatch, RootState } from '../../../../store/store';
 import {
   createSubtask,
+  createTask,
   deleteTask,
+  editTask,
   fetchAllTasks,
   toggleTaskComplete,
-} from './projectTasks.slice';
+} from '../thunks';
 
 export const useTaskManager = function () {
   const [expandedTaskIds, setExpandedTaskIds] = useState<string[]>([]);
@@ -35,51 +37,36 @@ export const useTaskManager = function () {
     title: string,
     projectId: string,
   ) {
-    //obsługa dodwania nowego podzadania
     if (!title.trim())
       throw new Error('Sub task title is required to add subtask');
     if (!parentId) throw new Error('Parent id is required to add new subtask');
-
     dispatch(createSubtask({ title, parentId, projectId }));
   };
 
+  const handleEditTask = async (taskId: string, newTitle: string) => {
+    if (!newTitle.trim()) return;
+    dispatch(editTask({ taskId, newTitle }));
+  };
   const handleToggleComplete = async (taskId: string) => {
     dispatch(toggleTaskComplete({ taskId, tasks }));
-
-    // const response = await fetch(`/api/tasks/${taskId}`, {
-    //   method: 'PATCH',
-    //   headers: { 'Content-Type': 'application/json' },
-    //   body: JSON.stringify({ isCompleted: !taskToToggle?.isCompleted }),
-    // });
-
-    // if (response.ok) {
-    //   setProject((p) => {
-    //     if (!p) return null; //Zmiana z null
-    //     return {
-    //       ...p,
-    //       tasks: updateTaskInTree(p.tasks, taskId, {
-    //         isCompleted: !taskToToggle?.isCompleted,
-    //       }),
-    //     };
-    //   });
-    // }
   };
 
-  const handleAddTask = async (title: string, projectId: string) => {
+  const handleAddMainTask = async (title: string, projectId: string) => {
     if (!title.trim()) return;
 
-    const response = await fetch('/api/tasks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title, projectId: projectId, parentId: null }),
-    });
+    dispatch(createTask({ title, projectId, parentId: null }));
+    // const response = await fetch('/api/tasks', {
+    //   method: 'POST',
+    //   headers: { 'Content-Type': 'application/json' },
+    //   body: JSON.stringify({ title, projectId: projectId, parentId: null }),
+    // });
 
-    if (!response.ok) {
-      console.error('Błąd podczas dodawania zadania');
-      return;
-    }
+    // if (!response.ok) {
+    //   console.error('Błąd podczas dodawania zadania');
+    //   return;
+    // }
 
-    const newTask = await response.json();
+    // const newTask = await response.json();
 
     // setProject((p) => {
     //   if (!p) return null;
@@ -93,11 +80,12 @@ export const useTaskManager = function () {
   };
   return {
     tasks,
-    handleAddTask,
+    handleAddMainTask,
     handleToggleExpand,
     expandedTaskIds,
     handleDeleteTask,
     handleSubTaskAdd,
     handleToggleComplete,
+    handleEditTask,
   };
 };

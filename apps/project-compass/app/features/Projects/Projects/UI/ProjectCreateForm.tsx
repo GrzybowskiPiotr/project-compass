@@ -2,7 +2,7 @@ import { Button, Form, Input, TextArea } from '@project-compass/shared-ui';
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router';
-import { AppDispatch, RootState } from '../../../store/store';
+import { AppDispatch, RootState } from '../../../../store/store';
 import { clearProjectError, createProject } from '../projects.slice';
 
 export default function ProjectCreateForm() {
@@ -21,7 +21,7 @@ export default function ProjectCreateForm() {
     if (status === 'succeeded' && selectedProject && projectName) {
       navigate('/');
     }
-  }, [status, navigate, selectedProject, dispatch]);
+  }, [status, navigate, selectedProject, dispatch, projectName]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();

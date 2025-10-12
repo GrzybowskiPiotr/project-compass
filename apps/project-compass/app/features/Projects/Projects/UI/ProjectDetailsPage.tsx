@@ -2,14 +2,15 @@ import { Button } from '@project-compass/ui';
 import { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RemoveScroll } from 'react-remove-scroll';
-import { RootState } from '../../../store/store';
-import { ProjectEditForm } from '../ProjectOperations/ProjectEditForm';
-import { TaskList } from '../ProjectTasks/TaskList';
-import { useTaskManager } from '../ProjectTasks/useTasksManager';
+import { RootState } from '../../../../store/store';
+import { useTaskManager } from '../../ProjectTasks/hooks/useTasksManager';
+import { AddTaskForm } from '../../ProjectTasks/UI/AddTaskForm';
+import { TaskList } from '../../ProjectTasks/UI/TaskList';
 import { useProjectManager } from '../useProjectManager';
+import { ProjectEditForm } from './ProjectEditForm';
 
 export default function ProjectDetailsPage() {
-  const { handleDeleteProject, handleEditTask, handleEditedProjectSubmit } =
+  const { handleDeleteProject, handleEditedProjectSubmit } =
     useProjectManager();
 
   const {
@@ -18,9 +19,11 @@ export default function ProjectDetailsPage() {
     handleToggleExpand,
     handleDeleteTask,
     handleToggleComplete,
+    handleEditTask,
+    handleAddMainTask,
   } = useTaskManager();
 
-  const [isProjectEditable, setIsProjectEditable] = useState(false);
+  const [isProjectEditable, setIsProjectEditable] = useState(false); // do zastanowienia się czy potrzebuję stanu lokalnego do wyświetlania formularza edycji Taska.
 
   const handleEditProjectClick = () => setIsProjectEditable((prev) => !prev);
 
@@ -47,6 +50,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className=" text-white min-h-fit w-full bg-opacity-50 p-8 rounded-lg shadow-xl">
+      {/* przeniesienie formularza do osobnego Komponentu */}
       {isProjectEditable && (
         <RemoveScroll>
           <div className="w-full h-full absolute left-0 top-0 flex justify-center items-start  pt-20 z-50 bg-slate-700 bg-opacity-40 backdrop-blur-md">
@@ -93,11 +97,6 @@ export default function ProjectDetailsPage() {
                 </div>
                 <ProjectEditForm
                   handleFormCancel={() => setIsProjectEditable(false)}
-                  // handleSubmit={(formData: { name: string; description: string }) => {
-                  //   console.log('Form Data:', formData);
-                  //   handleEditedProjectSubmit(formData);
-                  //   setIsProjectEditable(false);
-                  // }}
                   handleSubmit={(formData: {
                     name: string;
                     description: string;
@@ -168,7 +167,7 @@ export default function ProjectDetailsPage() {
         handleEditTask={handleEditTask}
         handleSubTaskAdd={handleSubTaskAdd}
       />
-      {/* <AddTaskForm onTaskAdd={handleAddTask} projectId={Project.id} /> */}
+      <AddTaskForm onTaskAdd={handleAddMainTask} projectId={Project.id} />
     </div>
   );
 }

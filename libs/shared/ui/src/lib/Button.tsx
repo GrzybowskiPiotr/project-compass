@@ -16,7 +16,7 @@ export function Button({
   ...rest
 }: ButtonProps) {
   const combinedClassName = clsx(
-    'rounded font-semibold transition-colors focus:outline-none focus:ring-2 focus: ring-offset-2',
+    'rounded  shadow-xl font-semibold transition-colors focus:outline-none focus:ring-2 focus: ring-offset-2',
     {
       'bg-blue-600 hover:bg-blue-700 text-white focus:ring-blue-500':
         variant === 'primary',

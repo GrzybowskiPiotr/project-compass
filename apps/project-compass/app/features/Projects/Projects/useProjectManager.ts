@@ -2,7 +2,7 @@ import { Project } from '@project-compass/shared-types';
 import { useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate, useParams } from 'react-router';
-import { AppDispatch, RootState } from '../../store/store';
+import { AppDispatch, RootState } from '../../../store/store';
 import {
   deleteProject,
   fetchProjectById,
@@ -54,34 +54,10 @@ export function useProjectManager() {
     dispatch(updateProject(updatedProjectData));
   };
 
-  const handleEditTask = async (taskId: string, newTitle: string) => {
-    if (!newTitle.trim()) return;
-
-    const response = await fetch(`/api/tasks/${taskId}`, {
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ title: newTitle }),
-    });
-
-    // if (response.ok) {
-    //   const updatedTask = await response.json();
-    //   setProject((p) => {
-    //     if (!p) return null; //Zmiana z null
-    //     return {
-    //       ...p,
-    //       tasks: updateTaskInTree(p.tasks, taskId, {
-    //         title: updatedTask.title,
-    //       }),
-    //     };
-    //   });
-    // }
-  };
-
   return {
     status,
     project,
     handleDeleteProject,
-    handleEditTask,
     handleEditedProjectSubmit,
   };
 }

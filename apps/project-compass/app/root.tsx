@@ -12,7 +12,7 @@ import {
 import stylesHref from '../styles.css?url';
 import { AppNav } from './app-nav';
 import { checkAuth } from './features/Auth/auth.slice';
-import { clearProjectError } from './features/Projects/projects.slice';
+import { clearProjectError } from './features/Projects/Projects/projects.slice';
 import store, { AppDispatch, RootState } from './store/store';
 
 export const meta: MetaFunction = () => [

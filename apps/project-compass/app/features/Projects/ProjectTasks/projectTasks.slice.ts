@@ -1,19 +1,27 @@
-// features/ProjectTasks/projectTasks.slice.ts
-import { CreateTaskDTO, Task } from '@project-compass/shared-types';
-import { createAsyncThunk, createSlice, PayloadAction } from '@reduxjs/toolkit';
-import api from '../../../api/axios';
+import { Task } from '@project-compass/shared-types';
+import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+//helpers import
 import { addSubTaskToTree } from './helpers/addSubTaskToTree';
 import { deleteTaskFromTree } from './helpers/deleteTasksfromTree';
-import { findTaskInTree } from './helpers/findTaskInTree';
 import { updateTaskInTree } from './helpers/updateTaskInTree';
+// thunks import
 
+import {
+  createSubtask,
+  createTask,
+  deleteTask,
+  editTask,
+  fetchAllTasks,
+  toggleTaskComplete,
+} from './thunks/';
+//local types delaration
 export interface TaskState {
   tasks: Task[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
   error: string | null;
   selectedTask: string | null;
 }
-
+//slice initila state declaration
 const initialState: TaskState = {
   tasks: [],
   status: 'idle',
@@ -21,90 +29,6 @@ const initialState: TaskState = {
   selectedTask: null,
 };
 
-// fetch all tasks for projectId
-export const fetchAllTasks = createAsyncThunk<
-  Task[],
-  string,
-  { rejectValue: string }
->('tasks/fetchAll', async (projectId: string, { rejectWithValue }) => {
-  try {
-    // endpoint: /:projectId/tasks/
-    const response = await api.get<Task[]>(`/${projectId}/tasks/`);
-    return response.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error?.response?.data?.message ?? 'Failed to fetch tasks',
-    );
-  }
-});
-export const toggleTaskComplete = createAsyncThunk<
-  Task,
-  { taskId: string; tasks: Task[] },
-  { rejectValue: string }
->('task/toggleTaskComplete', async ({ taskId, tasks }, { rejectWithValue }) => {
-  try {
-    if (!taskId) throw new Error('Task Id is required');
-    const taskToToggle = findTaskInTree(taskId, tasks);
-
-    const response = await api.patch<Task>(`/tasks/${taskId}`, {
-      isCompleted: !taskToToggle?.isCompleted,
-    });
-
-    return response.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error?.resposne?.data?.message ?? 'Failed to toggle complete task',
-    );
-  }
-});
-
-// deleteTask zwraca deleted taskId (string)
-export const deleteTask = createAsyncThunk<
-  string,
-  string,
-  { rejectValue: string }
->('tasks/deleteTask', async (taskId: string, { rejectWithValue }) => {
-  try {
-    if (!taskId) throw new Error('Task ID is undefined');
-    await api.delete(`/tasks/${taskId}`);
-    return taskId;
-  } catch (error: any) {
-    return rejectWithValue(
-      error?.response?.data?.message ?? 'Failed to delete task',
-    );
-  }
-});
-
-export const createTask = createAsyncThunk<
-  Task,
-  { title: string; projectId: string; parentId?: string | null },
-  { rejectValue: string }
->('tasks/createTask', async (payload, { rejectWithValue }) => {
-  try {
-    const response = await api.post<Task>('/tasks', payload);
-    return response.data;
-  } catch (error: any) {
-    return rejectWithValue(
-      error?.response?.data?.message ?? 'Failed to create task',
-    );
-  }
-});
-
-export const createSubtask = createAsyncThunk<
-  Task,
-  CreateTaskDTO,
-  { rejectValue: string }
->('tasks/createSubtask', async (payload, { rejectWithValue }) => {
-  try {
-    const response = await api.post<Task>('/tasks', payload);
-    return response.data;
-  } catch (error: any) {
-    console.error('Error occurse while adding subTask');
-    return rejectWithValue(
-      error?.response?.data?.message || 'Failed to create subtask',
-    );
-  }
-});
 export const taskSlice = createSlice({
   name: 'tasks',
   initialState,
@@ -118,6 +42,20 @@ export const taskSlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
+      .addCase(createTask.pending, (state) => {
+        state.status = 'loading';
+        state.error = null;
+      })
+      .addCase(createTask.fulfilled, (state, action) => {
+        state.status = 'succeeded';
+        state.error = null;
+        state.tasks.push(action.payload);
+      })
+      .addCase(createTask.rejected, (state, action) => {
+        state.status = 'failed';
+        state.error =
+          action.payload ?? action.error.message ?? 'Failed to create task';
+      })
       .addCase(createSubtask.pending, (state) => {
         state.status = 'loading';
         state.error = null;
@@ -150,20 +88,6 @@ export const taskSlice = createSlice({
         state.status = 'failed';
         state.error =
           action.payload ?? action.error.message ?? 'Failed to fetch tasks';
-      })
-      .addCase(createTask.pending, (state) => {
-        state.status = 'loading';
-        state.error = null;
-      })
-      .addCase(createTask.fulfilled, (state, action) => {
-        state.status = 'succeeded';
-        state.error = null;
-        state.tasks.push(action.payload);
-      })
-      .addCase(createTask.rejected, (state, action) => {
-        state.status = 'failed';
-        state.error =
-          action.payload ?? action.error.message ?? 'Failed to create task';
       })
       .addCase(toggleTaskComplete.rejected, (state, action) => {
         state.status = 'failed';
@@ -203,6 +127,25 @@ export const taskSlice = createSlice({
         state.status = 'failed';
         state.error =
           action.payload ?? action.error.message ?? 'Failed to delete task';
+      })
+      .addCase(editTask.rejected, (state, action) => {
+        state.error =
+          action.payload ?? action.error.message ?? 'FAiled to edit task';
+        state.status = 'failed';
+      })
+      .addCase(editTask.pending, (state) => {
+        state.error = null;
+        state.status = 'loading';
+      })
+      .addCase(editTask.fulfilled, (state, action) => {
+        state.error = null;
+        state.status = 'succeeded';
+        const updatetState = updateTaskInTree(
+          [...state.tasks],
+          action.payload.id,
+          action.payload,
+        );
+        state.tasks = updatetState;
       });
   },
 });
